@@ -25,7 +25,7 @@ export class UploadFilesController {
   )
   async agruparFechaReferencia(@UploadedFile() file: Express.Multer.File) {
     const filename = await this.uploadFileService.agrupamientoExcel(file.path);
-    return { downloadLink: `http://localhost:${process.env.PORT}/upload-files/download/${filename}` };
+    return { downloadLink: `http://${process.env.IP}/upload-files/download/${filename}` };
   }
 
   @Get('download/:filename')

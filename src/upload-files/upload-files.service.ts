@@ -7,7 +7,6 @@ import { excelDateToJSDate, generateGroupKey, getDescription, getGroupingFields 
 
 @Injectable()
 export class UploadFilesService {
-
   async agrupamientoExcel(filePath: string): Promise<string> {
     const workbook = xlsx.readFile(filePath);
     const sheetName = workbook.SheetNames[0];
@@ -41,7 +40,6 @@ export class UploadFilesService {
       row['Referencia'] = agruparReferencia(row['Referencia']);
       return row;
     });
-
     const groupedData = _(data)
       .groupBy(row => {
         const groupFields = getGroupingFields(row["Source"]);
@@ -60,11 +58,11 @@ export class UploadFilesService {
         const Credito = _.sumBy(rows, 'Credito');
         const Balance = _.sumBy(rows, 'Balance');
 
-        const fecha = groupObj['Fecha'] || rows[0]['Fecha'];
+        const fecha = groupObj['Fecha'] || rows[0]['Fecha']; 
         const referencia = groupObj['Referencia'] || rows[0]['Referencia'];
         const source = groupObj['Source'] || rows[0]['Source'];
-        const DESC = getDescription(fecha, referencia, source, rows[0]['Descripcion']);
-
+        const ultimaDescripcion = _.last(rows)['Descripcion']
+        const DESC = getDescription(fecha, referencia, source, ultimaDescripcion);
         return {
           ...groupObj,
           Debito,
@@ -74,8 +72,32 @@ export class UploadFilesService {
         };
       })
       .value();
+    const finalGroupedData = _(groupedData)
+      .groupBy('Cuenta')
+      .map((rows, account) => {
+        const cambioPeriodo = rows.filter(row => row.DESC === 'Cambio de Periodo Corriente');
+        const balanceFinal = rows.filter(row => row.DESC === 'Balance Final');
+        const otherRows = rows.filter(row => row.DESC !== 'Cambio de Periodo Corriente' && row.DESC !== 'Balance Final');
+        return [
+          ...otherRows,
+          ...cambioPeriodo,
+          ...balanceFinal
+        ];
+      })
+      .flatten()
+      .value();
+    const sortedData = finalGroupedData.map(row => ({
+      Cuenta: row['Cuenta'],
+      Fecha: row['Fecha'],
+      Referencia: row['Referencia'],
+      Source: row['Source'],
+      Descripción: row['DESC'],
+      Debito: row['Debito'],
+      Credito: row['Credito'],
+      Balance: row['Balance']
+    }));
 
-    const newSheet = xlsx.utils.json_to_sheet(groupedData);
+    const newSheet = xlsx.utils.json_to_sheet(sortedData);
     const newWorkbook = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(newWorkbook, newSheet, 'Agrupado');
     const outputFilePath = path.join(process.cwd(), 'uploads', `archivo_agrupado_${Date.now()}.xlsx`);

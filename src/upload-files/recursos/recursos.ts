@@ -12,22 +12,32 @@ export const getDescription = (
   source: string,
   descripcion: string
 ): string => {
-  const fecha = fechaString ? new Date(fechaString) : null;
-  const formato = fecha instanceof Date ? fecha.toISOString().split('T')[0] : '';
-  if (!referencia || referencia === 'Otros') {
-    if (fecha instanceof Date && !isNaN(fecha.getTime())) {
+  if (!fechaString && !source ) {
+    return 'Cambio de Periodo Corriente';
+  }
+
+  const fecha = new Date(fechaString);
+  const formato = fecha instanceof Date && !isNaN(fecha.getTime()) 
+    ? fecha.toISOString().split('T')[0] 
+    : '';
+
+  if (!referencia || referencia === 'Otros' && !source ) {
+    if (fecha instanceof Date && !isNaN(fecha.getTime()) && source === '' ) {
       fecha.setDate(fecha.getDate() + 1);
       const dia = fecha.getDate();
-      if (dia == 1) {
+      if (dia === 1) {
         return 'Balance Inicial';
       }
-      if (dia == 30 || dia == 31) {
+      if (dia === 30 || dia === 31) {
         return 'Balance Final';
       }
     } else {
       return 'Cambio de Periodo Corriente';
     }
   }
+  //console.log(source , " llllllllllllllllllllllll")
+  /*       fecha.setDate(fecha.getDate() + 1);
+      const dia = fecha.getDate(); */
   if (source) {
     if (source.includes('(AR-DEPOSIT)')) {
       return `Depósito del día ${formato}`;
@@ -42,13 +52,16 @@ export const getDescription = (
     } else if (source.includes('(AR-NC)')) {
       return `Notas de crédito del día ${formato}`;
     } else if (source.includes('(AP-PUR-INV)')) {
-      return `Compra (${referencia} del día ${formato})`;
+      const filtro = descripcion.split(' - Item')[0]
+      return `${filtro}`;
     } else if (source.includes('(AR-BILL-COSTS)')) {
       return `Costos del día ${formato}`;
     } else if (source.includes('(INV-AJ-COSTS)') || source.includes('(INV-AJ)')) {
       return `Ajuste numero ${referencia}`;
     } else if (source.includes('(AP-PURCHASE)')) {
-      return `Descripción :${referencia}`;
+      return `${descripcion}`;
+    }else if (source.includes('(FIXED-ASSETS)')) {
+      return `Descripción------- :${descripcion}`;
     }
   }
   return '';
@@ -56,25 +69,31 @@ export const getDescription = (
 
 const groupingMap = {
   "(AR-DEPOSIT)": ["Cuenta", "Source", "Fecha"],
-  "(AR-PAY)": ["Cuenta", "Source", "Fecha"],
+  "(AR-PAY)": ["Cuenta"],
   "(MAN-ENTRY)": ["Cuenta", "Source", "Referencia", "Descripcion"],
   "(AP-PAY)": ["Cuenta", "Source", "Referencia"],
   "(AR-BILL)": ["Cuenta", "Source", "Fecha"],
   "(AR-NC)": ["Cuenta", "Source", "Fecha"],
-  "(AP-PUR-INV)": ["Cuenta", "Source", "Referencia"],
+  "(AP-PUR-INV)": ["Cuenta","Source","Referencia"],
   "(AP-PURCHASE)": ["Cuenta", "Source", "Referencia"],
   "(AR-BILL-COSTS)": ["Cuenta", "Source", "Fecha"],
   "(INV-AJ-COSTS)": ["Cuenta", "Source", "Referencia"],
-  "(INV-AJ)": ["Cuenta", "Source", "Referencia"]
+  "(INV-AJ)": ["Cuenta", "Source", "Referencia"],
+  "(FIXED-ASSETS)": ["Cuenta"]
+
 };
 
 export const generateGroupKey = (row: any, fields: string[]): string => {
   return fields.map(field => row[field]).join('_');
 };
-
 export const getGroupingFields = (source: string): string[] => {
+  //console.log(source , "---------contenido")
+  let concat = ""; // Usar let en lugar de const
   for (const key in groupingMap) {
     if (source && source.includes(key)) {
+      //console.log(source , "---------contenido-----------2")
+      //console.log("7777777 , hubo un error =" , key)
+      concat = concat.concat("----", key); // Reasignar el resultado de la concatenación
       return groupingMap[key];
     }
   }
