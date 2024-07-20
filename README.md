@@ -24,7 +24,7 @@
     -  Hacer una peticion de tipo post al siguiente link
     
        ```
-      http://localhost:3008/agrupar-fecha-referencia
+      localhost:3008/upload-files/agrupar-fecha-referencia
       ```
       
     -  Ir a body -> form-data he insertar la siguiente key-value
@@ -33,10 +33,9 @@
     
     -  El resultado de hacer esta peticion sera 
     
-       ```json
-          {
-              "downloadLink": "http://127.0.0.1:3008/download/archivo_agrupado_1721254935308.xlsx"
-          }
+       ```{
+            "downloadLink": "http://localhost:3008/upload-files/download/archivo_agrupado_1721490659149.xlsx"
+        }
        
           ```
           
