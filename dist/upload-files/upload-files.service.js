@@ -35,19 +35,28 @@ let UploadFilesService = class UploadFilesService {
             }
             return row;
         });
-        const agruparReferencia = ref => {
+        const formatoReferencia = ref => {
             if (!ref)
-                return 'Otros';
+                return '';
             ref = ref.toString();
-            return isNaN(ref[0]) ? ref.slice(0, 3) : 'Otros';
+            return ref;
         };
-        data = data.map(row => {
-            row['Referencia'] = agruparReferencia(row['Referencia']);
+        function limpiarCadena(cadena) {
+            return cadena.trim().replace(/[\r\n]/g, '');
+        }
+        data = data.map((row, index) => {
+            row['Descripcion'] = limpiarCadena(row['Descripcion']);
+            row['Referencia'] = formatoReferencia(row['Referencia']);
+            row['Source'] = limpiarCadena(row['Source']);
+            row['index2'] = index;
             return row;
         });
         const groupedData = _(data)
             .groupBy(row => {
             const groupFields = (0, recursos_1.getGroupingFields)(row["Source"]);
+            if (row["Source"].includes('(AP-PAY)')) {
+                console.log((0, recursos_1.generateGroupKey)(row, groupFields));
+            }
             return (0, recursos_1.generateGroupKey)(row, groupFields);
         })
             .map((rows, key) => {
@@ -61,19 +70,46 @@ let UploadFilesService = class UploadFilesService {
             const Credito = _.sumBy(rows, 'Credito');
             const Balance = _.sumBy(rows, 'Balance');
             const fecha = groupObj['Fecha'] || rows[0]['Fecha'];
-            const referencia = groupObj['Referencia'] || rows[0]['Referencia'];
+            const referencia = rows[0]['Referencia'];
             const source = groupObj['Source'] || rows[0]['Source'];
-            const DESC = (0, recursos_1.getDescription)(fecha, referencia, source, rows[0]['Descripcion']);
+            const ultimaDescripcion = _.last(rows)['Descripcion'];
+            const DESC = (0, recursos_1.getDescription)(fecha, referencia, source, ultimaDescripcion);
             return {
                 ...groupObj,
                 Debito,
                 Credito,
                 Balance,
-                DESC
+                DESC,
+                Referencia: referencia
             };
         })
             .value();
-        const newSheet = xlsx.utils.json_to_sheet(groupedData);
+        const finalGroupedData = _(groupedData)
+            .groupBy('Cuenta')
+            .map((rows, account) => {
+            const cambioPeriodo = rows.filter(row => row.DESC === 'Cambio de Periodo Corriente');
+            const balanceFinal = rows.filter(row => row.DESC === 'Balance Final');
+            const otherRows = rows.filter(row => row.DESC !== 'Cambio de Periodo Corriente' && row.DESC !== 'Balance Final');
+            return [
+                ...otherRows,
+                ...cambioPeriodo,
+                ...balanceFinal,
+                {}
+            ];
+        })
+            .flatten()
+            .value();
+        const sortedData = finalGroupedData.map(row => ({
+            Cuenta: row['Cuenta'],
+            Fecha: row['Fecha'],
+            Referencia: row['Referencia'],
+            Source: row['Source'],
+            Descripción: row['DESC'],
+            Debito: row['Debito'],
+            Credito: row['Credito'],
+            Balance: row['Balance']
+        }));
+        const newSheet = xlsx.utils.json_to_sheet(sortedData);
         const newWorkbook = xlsx.utils.book_new();
         xlsx.utils.book_append_sheet(newWorkbook, newSheet, 'Agrupado');
         const outputFilePath = path.join(process.cwd(), 'uploads', `archivo_agrupado_${Date.now()}.xlsx`);
