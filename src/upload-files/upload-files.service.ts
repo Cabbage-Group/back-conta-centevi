@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { excelDateToJSDate, generateGroupKey, getDescription, getGroupingFields } from './recursos/recursos';
 
+
 @Injectable()
 export class UploadFilesService {
   async agrupamientoExcel(filePath: string): Promise<string> {
@@ -121,7 +122,7 @@ export class UploadFilesService {
       Credito: row['Credito'],
       Balance: row['Balance']
     }));
-
+//onsole.table(sortedData)
     const newSheet = xlsx.utils.json_to_sheet(sortedData);
     const newWorkbook = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(newWorkbook, newSheet, 'Agrupado');

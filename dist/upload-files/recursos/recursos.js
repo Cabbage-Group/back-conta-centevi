@@ -40,7 +40,7 @@ const getDescription = (fechaString, referencia, source, descripcion) => {
             return descripcion;
         }
         else if (source.includes('(AP-PAY)')) {
-            return `Proveedor - Pago (${referencia})`;
+            return `${descripcion}`;
         }
         else if (source.includes('(AR-BILL)')) {
             return `Ventas del día ${formato}`;
@@ -95,7 +95,7 @@ const getGroupingFields = (source) => {
             return groupingMap[key];
         }
     }
-    return [];
+    return ["Cuenta", "Fecha"];
 };
 exports.getGroupingFields = getGroupingFields;
 //# sourceMappingURL=recursos.js.map

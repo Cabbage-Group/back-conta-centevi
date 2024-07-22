@@ -24,7 +24,7 @@ let UploadFilesController = class UploadFilesController {
     }
     async agruparFechaReferencia(file) {
         const filename = await this.uploadFileService.agrupamientoExcel(file.path);
-        return { downloadLink: `http://${process.env.IP}/upload-files/download/${filename}` };
+        return { downloadLink: `${process.env.IP}/upload-files/download/${filename}` };
     }
     downloadFile(filename, res) {
         return res.download(`uploads/${filename}`);

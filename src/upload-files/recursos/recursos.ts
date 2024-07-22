@@ -46,7 +46,7 @@ export const getDescription = (
     } else if (source.includes('(MAN-ENTRY)')) {
       return descripcion;
     } else if (source.includes('(AP-PAY)')) {
-      return `Proveedor - Pago (${referencia})`;
+      return `${descripcion}`;
     } else if (source.includes('(AR-BILL)')) {
       return `Ventas del día ${formato}`;
     } else if (source.includes('(AR-NC)')) {
@@ -99,5 +99,5 @@ export const getGroupingFields = (source: string): string[] => {
     }
   }
   //console.log("nada")
-  return [];
+  return ["Cuenta","Fecha"];
 };
