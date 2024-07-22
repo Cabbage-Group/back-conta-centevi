@@ -61,7 +61,8 @@ export const getDescription = (
     } else if (source.includes('(AP-PURCHASE)')) {
       return `${descripcion}`;
     }else if (source.includes('(FIXED-ASSETS)')) {
-      return `Descripción------- :${descripcion}`;
+      console.log(source , "source")
+      return `${descripcion}`;
     }
   }
   return '';
@@ -69,9 +70,9 @@ export const getDescription = (
 
 const groupingMap = {
   "(AR-DEPOSIT)": ["Cuenta", "Source", "Fecha"],
-  "(AR-PAY)": ["Cuenta"],
+  "(AR-PAY)": ["Cuenta","Source", "Fecha" ],//diario de cobros
   "(MAN-ENTRY)": ["Cuenta", "Source", "Referencia", "Descripcion"],
-  "(AP-PAY)": ["Cuenta", "Source", "Referencia"],
+  "(AP-PAY)": ["Cuenta", "Fecha", "Source", "Referencia", "Descripcion" , "index2"],//vacio
   "(AR-BILL)": ["Cuenta", "Source", "Fecha"],
   "(AR-NC)": ["Cuenta", "Source", "Fecha"],
   "(AP-PUR-INV)": ["Cuenta","Source","Referencia"],
@@ -97,5 +98,6 @@ export const getGroupingFields = (source: string): string[] => {
       return groupingMap[key];
     }
   }
-  return ["Cuenta", "Fecha"];
+  //console.log("nada")
+  return [];
 };

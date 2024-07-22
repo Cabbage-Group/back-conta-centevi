@@ -62,7 +62,8 @@ const getDescription = (fechaString, referencia, source, descripcion) => {
             return `${descripcion}`;
         }
         else if (source.includes('(FIXED-ASSETS)')) {
-            return `Descripción------- :${descripcion}`;
+            console.log(source, "source");
+            return `${descripcion}`;
         }
     }
     return '';
@@ -72,7 +73,7 @@ const groupingMap = {
     "(AR-DEPOSIT)": ["Cuenta", "Source", "Fecha"],
     "(AR-PAY)": ["Cuenta"],
     "(MAN-ENTRY)": ["Cuenta", "Source", "Referencia", "Descripcion"],
-    "(AP-PAY)": ["Cuenta", "Source", "Referencia"],
+    "(AP-PAY)": ["Cuenta", "Fecha", "Source", "Referencia", "Descripcion", "index2"],
     "(AR-BILL)": ["Cuenta", "Source", "Fecha"],
     "(AR-NC)": ["Cuenta", "Source", "Fecha"],
     "(AP-PUR-INV)": ["Cuenta", "Source", "Referencia"],
@@ -94,7 +95,7 @@ const getGroupingFields = (source) => {
             return groupingMap[key];
         }
     }
-    return ["Cuenta", "Fecha"];
+    return [];
 };
 exports.getGroupingFields = getGroupingFields;
 //# sourceMappingURL=recursos.js.map

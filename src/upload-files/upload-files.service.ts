@@ -31,18 +31,34 @@ export class UploadFilesService {
       return row;
     });
 
-    const agruparReferencia = ref => {
-      if (!ref) return 'Otros';
+    const formatoReferencia = ref => {
+      if (!ref) return '';
       ref = ref.toString();
-      return isNaN(ref[0]) ? ref.slice(0, 3) : 'Otros';
+      //console.log(ref , "=========-----")
+      return ref;
     };
-    data = data.map(row => {
-      row['Referencia'] = agruparReferencia(row['Referencia']);
+
+    function limpiarCadena(cadena) {
+      return cadena.trim().replace(/[\r\n]/g, '');
+    }
+
+    data = data.map((row  , index)=> {
+      row['Descripcion'] = limpiarCadena(row['Descripcion']);
+      row['Referencia'] = formatoReferencia(row['Referencia']);
+      row['Source'] = limpiarCadena(row['Source']);
+      row['index2'] = index;
       return row;
     });
+    //console.log("antes-----")
+    //console.table(data)
+
+
     const groupedData = _(data)
       .groupBy(row => {
         const groupFields = getGroupingFields(row["Source"]);
+        if(row["Source"].includes('(AP-PAY)')){
+          console.log(generateGroupKey(row, groupFields))
+        }
         return generateGroupKey(row, groupFields);
       })
       .map((rows, key) => {
@@ -57,21 +73,26 @@ export class UploadFilesService {
         const Debito = _.sumBy(rows, 'Debito');
         const Credito = _.sumBy(rows, 'Credito');
         const Balance = _.sumBy(rows, 'Balance');
-
-        const fecha = groupObj['Fecha'] || rows[0]['Fecha']; 
-        const referencia = groupObj['Referencia'] || rows[0]['Referencia'];
+        const fecha = groupObj['Fecha'] || rows[0]['Fecha'];
+        //console.log(rows[0]['Referencia'] , "#########################")
+        const referencia =rows[0]['Referencia'];
+        //console.log(referencia , "///////////////////////////---")
         const source = groupObj['Source'] || rows[0]['Source'];
         const ultimaDescripcion = _.last(rows)['Descripcion']
         const DESC = getDescription(fecha, referencia, source, ultimaDescripcion);
+    
         return {
           ...groupObj,
           Debito,
           Credito,
           Balance,
-          DESC
+          DESC,
+          Referencia:referencia
         };
       })
       .value();
+    //console.log("despues-----")
+    //console.table(groupedData)
     const finalGroupedData = _(groupedData)
       .groupBy('Cuenta')
       .map((rows, account) => {
@@ -81,11 +102,15 @@ export class UploadFilesService {
         return [
           ...otherRows,
           ...cambioPeriodo,
-          ...balanceFinal
+          ...balanceFinal,
+        
+          {}
         ];
       })
       .flatten()
       .value();
+      //console.log("yyyyyyyyyyyyyyyyyyy-----")
+      //console.table(finalGroupedData)  
     const sortedData = finalGroupedData.map(row => ({
       Cuenta: row['Cuenta'],
       Fecha: row['Fecha'],
