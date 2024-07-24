@@ -71,12 +71,12 @@ export const getDescription = (
 const groupingMap = {
   "(AR-DEPOSIT)": ["Cuenta", "Source", "Fecha"],
   "(AR-PAY)": ["Cuenta","Source", "Fecha" ],//diario de cobros
-  "(MAN-ENTRY)": ["Cuenta", "Source", "Referencia", "Descripcion"],
+  "(MAN-ENTRY)": ["Cuenta", "Source", "Fecha", "Referencia", "Descripcion"],
   "(AP-PAY)": ["Cuenta", "Fecha", "Source", "Referencia", "Descripcion" , "index2"],//vacio
   "(AR-BILL)": ["Cuenta", "Source", "Fecha"],
   "(AR-NC)": ["Cuenta", "Source", "Fecha"],
-  "(AP-PUR-INV)": ["Cuenta","Source","Referencia"],
-  "(AP-PURCHASE)": ["Cuenta", "Source", "Referencia"],
+  "(AP-PUR-INV)": ["Cuenta","Source", "Fecha","Referencia"],
+  "(AP-PURCHASE)": ["Cuenta", "Source", "Fecha", "Referencia"],
   "(AR-BILL-COSTS)": ["Cuenta", "Source", "Fecha"],
   "(INV-AJ-COSTS)": ["Cuenta", "Source", "Referencia"],
   "(INV-AJ)": ["Cuenta", "Source", "Referencia"],

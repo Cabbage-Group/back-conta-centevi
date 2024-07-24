@@ -74,6 +74,15 @@ export class UploadFilesService {
         const Debito = _.sumBy(rows, 'Debito');
         const Credito = _.sumBy(rows, 'Credito');
         const Balance = _.sumBy(rows, 'Balance');
+        /* 
+              let fecha = ""
+        if (groupObj['Source'] && (groupObj['Source'].includes("(AP-PURCHASE)") || 
+        groupObj['Source'].includes("(AP-PUR-INV)") || 
+        groupObj['Source'].includes("(MAN-ENTRY)"))) {
+let fecha = _.last(rows)['Fecha'];
+} else {
+let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
+ */
         const fecha = groupObj['Fecha'] || rows[0]['Fecha'];
         //console.log(rows[0]['Referencia'] , "#########################")
         const referencia =rows[0]['Referencia'];
