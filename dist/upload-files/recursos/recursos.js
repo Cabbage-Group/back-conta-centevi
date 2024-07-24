@@ -71,7 +71,7 @@ const getDescription = (fechaString, referencia, source, descripcion) => {
 exports.getDescription = getDescription;
 const groupingMap = {
     "(AR-DEPOSIT)": ["Cuenta", "Source", "Fecha"],
-    "(AR-PAY)": ["Cuenta"],
+    "(AR-PAY)": ["Cuenta", "Source", "Fecha"],
     "(MAN-ENTRY)": ["Cuenta", "Source", "Referencia", "Descripcion"],
     "(AP-PAY)": ["Cuenta", "Fecha", "Source", "Referencia", "Descripcion", "index2"],
     "(AR-BILL)": ["Cuenta", "Source", "Fecha"],
