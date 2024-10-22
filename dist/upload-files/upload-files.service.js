@@ -99,16 +99,32 @@ let UploadFilesService = class UploadFilesService {
         })
             .flatten()
             .value();
-        const sortedData = finalGroupedData.map(row => ({
-            Cuenta: row['Cuenta'],
-            Fecha: row['Fecha'],
-            Referencia: row['Referencia'],
-            Source: row['Source'],
-            Descripción: row['DESC'],
-            Debito: row['Debito'],
-            Credito: row['Credito'],
-            Balance: row['Balance']
-        }));
+        const sortedData = finalGroupedData.map((row, index) => {
+            let debito = row['Debito'];
+            let credito = row['Credito'];
+            if (debito > credito) {
+                debito -= credito;
+                credito = 0;
+            }
+            else if (credito > debito) {
+                credito -= debito;
+                debito = 0;
+            }
+            const cuenta = row['Cuenta'] !== lastAccount ? row['Cuenta'] : '';
+            if (row['Cuenta'] !== lastAccount) {
+                lastAccount = row['Cuenta'];
+            }
+            return {
+                Cuenta: cuenta,
+                Fecha: row['Fecha'],
+                Referencia: row['Referencia'],
+                Source: row['Source'],
+                Descripción: row['DESC'],
+                Debito: debito === 0 ? '' : debito,
+                Credito: credito === 0 ? '' : credito,
+                Balance: row['Balance'] === 0 ? '' : row['Balance'],
+            };
+        });
         const newSheet = xlsx.utils.json_to_sheet(sortedData);
         const newWorkbook = xlsx.utils.book_new();
         xlsx.utils.book_append_sheet(newWorkbook, newSheet, 'Agrupado');

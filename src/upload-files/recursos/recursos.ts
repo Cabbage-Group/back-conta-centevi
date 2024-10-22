@@ -61,7 +61,6 @@ export const getDescription = (
     } else if (source.includes('(AP-PURCHASE)')) {
       return `${descripcion}`;
     }else if (source.includes('(FIXED-ASSETS)')) {
-      console.log(source , "source")
       return `${descripcion}`;
     }
   }

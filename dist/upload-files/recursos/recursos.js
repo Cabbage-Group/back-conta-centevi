@@ -62,7 +62,6 @@ const getDescription = (fechaString, referencia, source, descripcion) => {
             return `${descripcion}`;
         }
         else if (source.includes('(FIXED-ASSETS)')) {
-            console.log(source, "source");
             return `${descripcion}`;
         }
     }
