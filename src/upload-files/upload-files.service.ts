@@ -43,7 +43,7 @@ export class UploadFilesService {
       return cadena.trim().replace(/[\r\n]/g, '');
     }
 
-    data = data.map((row  , index)=> {
+    data = data.map((row, index) => {
       row['Descripcion'] = limpiarCadena(row['Descripcion']);
       row['Referencia'] = formatoReferencia(row['Referencia']);
       row['Source'] = limpiarCadena(row['Source']);
@@ -57,7 +57,7 @@ export class UploadFilesService {
     const groupedData = _(data)
       .groupBy(row => {
         const groupFields = getGroupingFields(row["Source"]);
-        if(row["Source"].includes('(AP-PAY)')){
+        if (row["Source"].includes('(AP-PAY)')) {
           console.log(generateGroupKey(row, groupFields))
         }
         return generateGroupKey(row, groupFields);
@@ -85,19 +85,19 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
  */
         const fecha = groupObj['Fecha'] || rows[0]['Fecha'];
         //console.log(rows[0]['Referencia'] , "#########################")
-        const referencia =rows[0]['Referencia'];
+        const referencia = rows[0]['Referencia'];
         //console.log(referencia , "///////////////////////////---")
         const source = groupObj['Source'] || rows[0]['Source'];
         const ultimaDescripcion = _.last(rows)['Descripcion']
         const DESC = getDescription(fecha, referencia, source, ultimaDescripcion);
-    
+
         return {
           ...groupObj,
           Debito,
           Credito,
           Balance,
           DESC,
-          Referencia:referencia
+          Referencia: referencia
         };
       })
       .value();
@@ -113,25 +113,49 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
           ...otherRows,
           ...cambioPeriodo,
           ...balanceFinal,
-        
+
           {}
         ];
       })
       .flatten()
       .value();
-      //console.log("yyyyyyyyyyyyyyyyyyy-----")
-      //console.table(finalGroupedData)  
-    const sortedData = finalGroupedData.map(row => ({
-      Cuenta: row['Cuenta'],
-      Fecha: row['Fecha'],
-      Referencia: row['Referencia'],
-      Source: row['Source'],
-      Descripción: row['DESC'],
-      Debito: row['Debito'],
-      Credito: row['Credito'],
-      Balance: row['Balance']
-    }));
-//onsole.table(sortedData)
+
+    const sortedData = finalGroupedData.map((row, index) => {
+      let debito = row['Debito'];
+      let credito = row['Credito'];
+      let balance = row['Balance'];
+    
+      if (row['DESC'] === 'Cambio de Periodo Corriente') {
+        balance = '';
+      } else if (typeof row["Source"] == "string" && row["Source"].includes("(AR-BILL)")) {
+        if (debito > credito) {
+          debito -= credito;
+          credito = 0;
+        } else if (credito > debito) {
+          credito -= debito;
+          debito = 0;
+        } else {
+          debito = 0;
+          credito = 0;
+        }
+      }
+    
+      const cuenta = row['Cuenta'] !== lastAccount ? row['Cuenta'] : '';
+      if (row['Cuenta'] !== lastAccount) {
+        lastAccount = row['Cuenta'];
+      }
+    
+      return {
+        Cuenta: cuenta,
+        Fecha: row['Fecha'],
+        Referencia: row['Referencia'],
+        Source: row['Source'],
+        Descripción: row['DESC'],
+        Debito: debito === 0 ? '' : debito,
+        Credito: credito === 0 ? '' : credito,
+        Balance: balance === 0 || balance === '' ? '' : balance,
+      };
+    });
     const newSheet = xlsx.utils.json_to_sheet(sortedData);
     const newWorkbook = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(newWorkbook, newSheet, 'Agrupado');
