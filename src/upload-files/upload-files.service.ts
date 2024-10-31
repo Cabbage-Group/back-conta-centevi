@@ -57,9 +57,9 @@ export class UploadFilesService {
     const groupedData = _(data)
       .groupBy(row => {
         const groupFields = getGroupingFields(row["Source"]);
-        if (row["Source"].includes('(AP-PAY)')) {
+        /* if (row["Source"].includes('(AP-PAY)')) {
           console.log(generateGroupKey(row, groupFields))
-        }
+        } */
         return generateGroupKey(row, groupFields);
       })
       .map((rows, key) => {
@@ -71,25 +71,40 @@ export class UploadFilesService {
           groupObj[field] = fieldValues[index];
         });
 
-        const Debito = _.sumBy(rows, 'Debito');
-        const Credito = _.sumBy(rows, 'Credito');
-        const Balance = _.sumBy(rows, 'Balance');
-        /* 
-              let fecha = ""
-        if (groupObj['Source'] && (groupObj['Source'].includes("(AP-PURCHASE)") || 
-        groupObj['Source'].includes("(AP-PUR-INV)") || 
-        groupObj['Source'].includes("(MAN-ENTRY)"))) {
-let fecha = _.last(rows)['Fecha'];
-} else {
-let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
- */
+
+        let Debito = _.sumBy(rows, 'Debito');
+        let Credito = _.sumBy(rows, 'Credito');
+        let Balance = _.sumBy(rows, 'Balance');
+
+
+
+
+        /* if (typeof rows[0]["Source"] == "string" && rows[0]["Source"].includes("(AR-BILL)")) {
+          if (Debito > Credito) {
+            Debito -= Credito;
+            Credito = 0;
+          } else if (Credito > Debito) {
+            Credito -= Debito;
+            Debito = 0;
+          } else {
+            Debito = 0;
+            Credito = 0;
+          }
+        } */
+        if (typeof groupObj["Descripcion"] == "string" && groupObj["Descripcion"].includes("Corriente")) {
+          console.log("entro............. 16")
+        }
         const fecha = groupObj['Fecha'] || rows[0]['Fecha'];
-        //console.log(rows[0]['Referencia'] , "#########################")
         const referencia = rows[0]['Referencia'];
-        //console.log(referencia , "///////////////////////////---")
         const source = groupObj['Source'] || rows[0]['Source'];
         const ultimaDescripcion = _.last(rows)['Descripcion']
         const DESC = getDescription(fecha, referencia, source, ultimaDescripcion);
+        /* if (typeof DESC["Descripcion"] == "string" && DESC["Descripcion"].includes("Cambio de Periodo Corriente")) {
+          console.log("entro aqui")
+        } */
+        if (typeof groupObj["Descripcion"] == "string" && groupObj["Descripcion"].includes("Corriente")) {
+          console.log("entro............. 16")
+        }
 
         return {
           ...groupObj,
@@ -119,32 +134,87 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
       })
       .flatten()
       .value();
-
+    let totalDebito = 0;
+    let totalCredito = 0;
     const sortedData = finalGroupedData.map((row, index) => {
       let debito = row['Debito'];
       let credito = row['Credito'];
       let balance = row['Balance'];
-    
+
+
+      /* if (row["Source"] === "Diario de Ventas") {
+        console.log("entro ---- 1")
+        totalDebito += debito;
+        totalCredito += credito;
+      }
+
+      if (row['DESC'] === 'Cambio de Periodo Corriente') {
+        console.log("entro ---- 2")
+
+        if (totalDebito > totalCredito) {
+          debito = totalDebito - totalCredito;
+          credito = 0;
+        console.log("entro ---- 4")
+
+        } else if (totalCredito > totalDebito) {
+        console.log("entro ---- 3")
+
+          credito = totalCredito - totalDebito;
+          debito = 0;
+        } else {
+          debito = 0;
+          credito = 0;
+        }
+        balance = debito + credito;
+        totalDebito = 0;
+        totalCredito = 0;
+      } */
       if (row['DESC'] === 'Cambio de Periodo Corriente') {
         balance = '';
       } else if (typeof row["Source"] == "string" && row["Source"].includes("(AR-BILL)")) {
         if (debito > credito) {
           debito -= credito;
           credito = 0;
+          //balance = 300000
+
         } else if (credito > debito) {
           credito -= debito;
           debito = 0;
+          //balance = 300001
+
         } else {
           debito = 0;
           credito = 0;
         }
       }
-    
+
       const cuenta = row['Cuenta'] !== lastAccount ? row['Cuenta'] : '';
       if (row['Cuenta'] !== lastAccount) {
         lastAccount = row['Cuenta'];
       }
-    
+
+
+      /*  
+        if (row["Source"] === "Diario de Ventas") {
+          totalDebito += debito;
+          totalCredito += credito;
+        }
+      
+        if (row['DESC'] === 'Cambio de Periodo Corriente') {
+          debito = totalDebito > totalCredito ? totalDebito - totalCredito : 0;
+          credito = totalCredito > totalDebito ? totalCredito - totalDebito : 0;
+          
+          balance = debito + credito;
+      
+          totalDebito = 0;
+          totalCredito = 0;
+        }
+      
+        const cuenta = row['Cuenta'] !== lastAccount ? row['Cuenta'] : '';
+        if (row['Cuenta'] !== lastAccount) {
+          lastAccount = row['Cuenta'];
+        } */
+
       return {
         Cuenta: cuenta,
         Fecha: row['Fecha'],

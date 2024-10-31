@@ -54,9 +54,6 @@ let UploadFilesService = class UploadFilesService {
         const groupedData = _(data)
             .groupBy(row => {
             const groupFields = (0, recursos_1.getGroupingFields)(row["Source"]);
-            if (row["Source"].includes('(AP-PAY)')) {
-                console.log((0, recursos_1.generateGroupKey)(row, groupFields));
-            }
             return (0, recursos_1.generateGroupKey)(row, groupFields);
         })
             .map((rows, key) => {
@@ -66,14 +63,20 @@ let UploadFilesService = class UploadFilesService {
             groupFields.forEach((field, index) => {
                 groupObj[field] = fieldValues[index];
             });
-            const Debito = _.sumBy(rows, 'Debito');
-            const Credito = _.sumBy(rows, 'Credito');
-            const Balance = _.sumBy(rows, 'Balance');
+            let Debito = _.sumBy(rows, 'Debito');
+            let Credito = _.sumBy(rows, 'Credito');
+            let Balance = _.sumBy(rows, 'Balance');
+            if (typeof groupObj["Descripcion"] == "string" && groupObj["Descripcion"].includes("Corriente")) {
+                console.log("entro............. 16");
+            }
             const fecha = groupObj['Fecha'] || rows[0]['Fecha'];
             const referencia = rows[0]['Referencia'];
             const source = groupObj['Source'] || rows[0]['Source'];
             const ultimaDescripcion = _.last(rows)['Descripcion'];
             const DESC = (0, recursos_1.getDescription)(fecha, referencia, source, ultimaDescripcion);
+            if (typeof groupObj["Descripcion"] == "string" && groupObj["Descripcion"].includes("Corriente")) {
+                console.log("entro............. 16");
+            }
             return {
                 ...groupObj,
                 Debito,
@@ -99,6 +102,8 @@ let UploadFilesService = class UploadFilesService {
         })
             .flatten()
             .value();
+        let totalDebito = 0;
+        let totalCredito = 0;
         const sortedData = finalGroupedData.map((row, index) => {
             let debito = row['Debito'];
             let credito = row['Credito'];
