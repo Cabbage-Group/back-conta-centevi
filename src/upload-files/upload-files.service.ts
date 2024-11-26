@@ -156,27 +156,11 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
         Balance: balance === 0 || balance === '' ? '' : balance,
       };
     });
-
-    let isSalesDiary:boolean
-
+    
     sortedData.forEach((dat, index) => {
-      if(dat['Descripción'] == 'Balance Inicial'){
-        isSalesDiary = false
-      }
-
-      if(!isSalesDiary){
-        if(dat['Source'] == '(AR-BILL) Diario de Ventas'){
-          isSalesDiary = true
-        }
-      }
 
       if(dat['Descripción'] == 'Cambio de Periodo Corriente'){
-        if(isSalesDiary){
-          dat['Credito']  = dat['Debito'] - dat['Credito']
-          dat['Debito']   = 0
-        }else{
-          dat['Balance'] = dat['Debito'] - dat['Credito']
-        }
+        dat['Balance'] = dat['Debito'] - dat['Credito']
       }
     });
 
