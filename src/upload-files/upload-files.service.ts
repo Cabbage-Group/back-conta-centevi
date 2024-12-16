@@ -157,11 +157,32 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
       };
     });
     
+    let inicioGrupo = false
     sortedData.forEach((dat, index) => {
 
+      if(inicioGrupo){
+        if(dat['Descripción'] == 'Balance Inicial'){
+          dat['Descripción'] = 'Balance Final'
+          const temp = sortedData[ index + 1 ]
+          sortedData[ index + 1] = sortedData[index]
+          sortedData[index] = temp
+        }
+      }
+
+      if(typeof dat['Cuenta'] == 'string' && dat['Cuenta'] != ''){
+        dat['Descripción'] = 'Balance Inicial'
+        inicioGrupo = true
+      }
+
+      if(dat['Cuenta'] == undefined && dat['Fecha'] == undefined && dat['Referencia'] == undefined && dat['Source'] == undefined && dat['Descripción'] == undefined && dat['Debito'] == undefined && dat['Credito'] == undefined && dat['Balance'] == undefined){
+        inicioGrupo = false
+      }
+
+      //Calculo hoja
       if(dat['Descripción'] == 'Cambio de Periodo Corriente'){
         dat['Balance'] = dat['Debito'] - dat['Credito']
       }
+            
     });
 
     const newSheet = xlsx.utils.json_to_sheet(sortedData);
