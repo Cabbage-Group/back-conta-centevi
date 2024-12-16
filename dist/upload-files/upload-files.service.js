@@ -135,6 +135,11 @@ let UploadFilesService = class UploadFilesService {
                 Balance: balance === 0 || balance === '' ? '' : balance,
             };
         });
+        sortedData.forEach((dat, index) => {
+            if (dat['Descripción'] == 'Cambio de Periodo Corriente') {
+                dat['Balance'] = dat['Debito'] - dat['Credito'];
+            }
+        });
         const newSheet = xlsx.utils.json_to_sheet(sortedData);
         const newWorkbook = xlsx.utils.book_new();
         xlsx.utils.book_append_sheet(newWorkbook, newSheet, 'Agrupado');
