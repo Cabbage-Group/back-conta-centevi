@@ -3,6 +3,7 @@ import * as xlsx from 'xlsx';
 import * as _ from 'lodash';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as XlsxPopulate from 'xlsx-populate';
 import { excelDateToJSDate, generateGroupKey, getDescription, getGroupingFields } from './recursos/recursos';
 
 
@@ -35,7 +36,6 @@ export class UploadFilesService {
     const formatoReferencia = ref => {
       if (!ref) return '';
       ref = ref.toString();
-      //console.log(ref , "=========-----")
       return ref;
     };
 
@@ -50,9 +50,6 @@ export class UploadFilesService {
       row['index2'] = index;
       return row;
     });
-    //console.log("antes-----")
-    //console.table(data)
-
 
     const groupedData = _(data)
       .groupBy(row => {
@@ -124,7 +121,7 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
       let debito = row['Debito'];
       let credito = row['Credito'];
       let balance = row['Balance'];
-    
+
       if (row['DESC'] === 'Cambio de Periodo Corriente') {
         balance = '';
       } else if (typeof row["Source"] == "string" && row["Source"].includes("(AR-BILL)")) {
@@ -139,12 +136,12 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
           credito = 0;
         }
       }
-    
+
       const cuenta = row['Cuenta'] !== lastAccount ? row['Cuenta'] : '';
       if (row['Cuenta'] !== lastAccount) {
         lastAccount = row['Cuenta'];
       }
-    
+
       return {
         Cuenta: cuenta,
         Fecha: row['Fecha'],
@@ -156,42 +153,92 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
         Balance: balance === 0 || balance === '' ? '' : balance,
       };
     });
-    
+
     let inicioGrupo = false
     sortedData.forEach((dat, index) => {
 
-      if(inicioGrupo){
-        if(dat['Descripción'] == 'Balance Inicial'){
+      if (inicioGrupo) {
+        if (dat['Descripción'] == 'Balance Inicial') {
           dat['Descripción'] = 'Balance Final'
-          const temp = sortedData[ index + 1 ]
-          sortedData[ index + 1] = sortedData[index]
+          const temp = sortedData[index + 1]
+          sortedData[index + 1] = sortedData[index]
           sortedData[index] = temp
         }
       }
 
-      if(typeof dat['Cuenta'] == 'string' && dat['Cuenta'] != ''){
+      if (typeof dat['Cuenta'] == 'string' && dat['Cuenta'] != '') {
         dat['Descripción'] = 'Balance Inicial'
         inicioGrupo = true
       }
 
-      if(dat['Cuenta'] == undefined && dat['Fecha'] == undefined && dat['Referencia'] == undefined && dat['Source'] == undefined && dat['Descripción'] == undefined && dat['Debito'] == undefined && dat['Credito'] == undefined && dat['Balance'] == undefined){
+      if (dat['Cuenta'] == undefined && dat['Fecha'] == undefined && dat['Referencia'] == undefined && dat['Source'] == undefined && dat['Descripción'] == undefined && dat['Debito'] == undefined && dat['Credito'] == undefined && dat['Balance'] == undefined) {
         inicioGrupo = false
       }
 
       //Calculo hoja
-      if(dat['Descripción'] == 'Cambio de Periodo Corriente'){
+      if (dat['Descripción'] == 'Cambio de Periodo Corriente') {
         dat['Balance'] = dat['Debito'] - dat['Credito']
       }
-            
-    });
 
-    const newSheet = xlsx.utils.json_to_sheet(sortedData);
+    });
+    const transformedData = [];
+
+    sortedData.forEach(row => {
+      if (row.Cuenta && row.Cuenta.trim() !== "") {
+        transformedData.push({
+          Cuenta: row.Cuenta,
+          Fecha: '',
+          Referencia: '',
+          Source: '',
+          'Descripción':'',
+          Debito: '',
+          Credito:'',
+          Balance:''
+        });
+
+        transformedData.push({
+          Cuenta: '',
+          Fecha: row.Fecha,
+          Referencia: '',
+          Source: '',
+          'Descripción':row.Descripción,
+          Debito: row.Debito,
+          Credito:row.Credito,
+          Balance: row.Balance
+        });
+      } else {
+        transformedData.push({ ...row });
+      }
+    });
+    
+    const newSheet = xlsx.utils.json_to_sheet(transformedData);
     const newWorkbook = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(newWorkbook, newSheet, 'Agrupado');
     const outputFilePath = path.join(process.cwd(), 'uploads', `archivo_agrupado_${Date.now()}.xlsx`);
     xlsx.writeFile(newWorkbook, outputFilePath);
-    fs.unlinkSync(filePath);
 
-    return path.basename(outputFilePath);
+    return XlsxPopulate.fromFileAsync(outputFilePath)
+      .then(workbook => {
+        const sheet = workbook.sheet('Agrupado');
+
+        const lastRow = sheet.usedRange().endCell().rowNumber();
+
+        for (let row = 2; row <= lastRow; row++) {
+          const cell = sheet.cell(`A${row}`);
+          if (cell.value()) {
+            cell.style("bold", true);
+          }
+        }
+        return workbook.toFileAsync(outputFilePath);
+      })
+      .then(() => {
+        fs.unlinkSync(filePath);
+
+        return path.basename(outputFilePath);
+      })
+      .catch(err => {
+        console.error('Error al aplicar estilos:', err);
+        return null;
+      });
   }
 }
