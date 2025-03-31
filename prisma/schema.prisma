@@ -1,0 +1,876 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model baja_vision {
+  id_consulta            Int       @id @default(autoincrement())
+  sucursal               Int
+  doctor                 String    @db.VarChar(30)
+  paciente               Int
+  id_terapia             Int
+  edad                   Int       @db.TinyInt
+  fecha_atencion         DateTime  @db.Date
+  m_c                    String    @db.Text
+  a_o                    String    @db.VarChar(10)
+  a_p                    String    @db.VarChar(10)
+  a_f                    String    @db.VarChar(10)
+  medicamentos           String    @db.VarChar(100)
+  tratamientos           String    @db.VarChar(100)
+  dx_oft_princ           String    @db.VarChar(60)
+  objetivos              String    @db.VarChar(100)
+  av_sc                  String    @db.VarChar(300)
+  av_cc                  String    @db.VarChar(300)
+  vision_exentrica       String?   @db.VarChar(100)
+  lensometria            String    @db.VarChar(400)
+  lensometria_extra      String    @db.VarChar(300)
+  cv_so                  String    @db.VarChar(200)
+  amsler                 String    @db.VarChar(100)
+  sensibilidad_c         String    @db.VarChar(100)
+  refraccion             String    @db.Text
+  pruebas                String    @db.VarChar(200)
+  ayudas_opticas         String    @db.Text
+  ayudas_no_opticas      String    @db.Text
+  plan_rehabilitacion    String    @db.Text
+  plan_versiones         String    @db.Text
+  fecha_creacion         DateTime  @db.DateTime(0)
+  editado                String?   @db.VarChar(200)
+  fecha_proxima_consulta DateTime? @db.DateTime(0)
+  hubo_contacto          Boolean   @default(false)
+  se_agendo              Boolean   @default(false)
+}
+
+model citas {
+  id              BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  citas_id        BigInt?    @db.UnsignedBigInt
+  ex_proxima_cita Boolean    @default(false)
+  origen_id       BigInt     @db.UnsignedBigInt
+  origen_tabla    String     @db.VarChar(255)
+  fecha_hora      DateTime   @db.DateTime(0)
+  tipo            citas_tipo
+  paciente_id     BigInt     @db.UnsignedBigInt
+  doctor          String?    @db.VarChar(255)
+  sucursal_id     BigInt?    @db.UnsignedBigInt
+  comentarios     String?    @db.Text
+  created_at      DateTime?  @db.Timestamp(0)
+  updated_at      DateTime?  @db.Timestamp(0)
+  citas           citas?     @relation("citasTocitas", fields: [citas_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "citas_citas_id_foreign")
+  other_citas     citas[]    @relation("citasTocitas")
+
+  @@index([citas_id], map: "citas_citas_id_foreign")
+}
+
+model consultagenerica {
+  id_consulta            Int       @id @default(autoincrement())
+  sucursal               Int
+  doctor                 String    @db.VarChar(255)
+  paciente               Int
+  id_terapia             Int
+  edad                   Int
+  fecha_atencion         DateTime? @db.Date
+  m_c                    String    @db.Text
+  fecha_creacion         DateTime  @db.DateTime(0)
+  editado                String?   @db.VarChar(255)
+  fecha_proxima_consulta DateTime? @db.DateTime(0)
+  hubo_contacto          Boolean   @default(false)
+  se_agendo              Boolean   @default(false)
+  id_usuario_contacto    Int?
+  nota_contacto          String?   @db.Text
+  fecha_contacto         DateTime? @db.DateTime(0)
+  usuarios               usuarios? @relation(fields: [id_usuario_contacto], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction, map: "fk_consultagenerica_usuarios")
+
+  @@index([id_usuario_contacto], map: "fk_consultagenerica_usuarios")
+}
+
+model contactos_correciones_ordenes {
+  correccion_ordenes_id Int
+  tipo_fase_cr_orden_id Int
+  usuario_id            Int
+  cantidad              Int       @default(0)
+  created_at            DateTime? @db.Timestamp(0)
+  updated_at            DateTime? @db.Timestamp(0)
+  id                    BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+}
+
+model contactos_ordenes {
+  id                 Int       @id @default(autoincrement())
+  ordenes_id         Int?
+  tipo_fase_orden_id Int?
+  usuario_id         Int?
+  cantidad           Int?      @default(0)
+  created_at         DateTime? @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
+}
+
+model correciones_ordenes {
+  id                         Int                          @id @default(autoincrement())
+  ordenes_id                 BigInt?                      @db.UnsignedBigInt
+  elaborado_por              Int?
+  esfera_od                  String?                      @db.VarChar(100)
+  esfera_oi                  String?                      @db.VarChar(100)
+  cilindro_od                String?                      @db.VarChar(100)
+  cilindro_oi                String?                      @db.VarChar(100)
+  eje_od                     String?                      @db.VarChar(100)
+  eje_oi                     String?                      @db.VarChar(100)
+  add_od                     String?                      @db.VarChar(100)
+  add_oi                     String?                      @db.VarChar(100)
+  prisma_od                  String?                      @db.VarChar(100)
+  prisma_oi                  String?                      @db.VarChar(100)
+  distancia_od               String?                      @db.VarChar(100)
+  distancia_oi               String?                      @db.VarChar(100)
+  altura_od                  String?                      @db.VarChar(100)
+  altura_oi                  String?                      @db.VarChar(100)
+  tipo_cristal_od            String?                      @db.VarChar(100)
+  tipo_cristal_oi            String?                      @db.VarChar(100)
+  material_od                String?                      @db.VarChar(100)
+  material_oi                String?                      @db.VarChar(100)
+  tratamientos_od            String?                      @db.VarChar(100)
+  tratamientos_oi            String?                      @db.VarChar(100)
+  aro_centevi                Boolean?
+  aro_propio                 Boolean?
+  codigo                     String?                      @db.VarChar(100)
+  color                      String?                      @db.VarChar(100)
+  marca                      String?                      @db.VarChar(100)
+  tipo_aro                   String?                      @db.VarChar(100)
+  doctor                     String?                      @db.VarChar(100)
+  observaciones              String?                      @db.VarChar(100)
+  l_uno                      String?                      @db.VarChar(100)
+  l_dos                      String?                      @db.VarChar(100)
+  l_tres                     String?                      @db.VarChar(100)
+  l_cuatro                   String?                      @db.VarChar(100)
+  l_cinco                    String?                      @db.VarChar(100)
+  pagado                     Boolean?
+  codigo_cristal             String?                      @db.VarChar(200)
+  created_at                 DateTime?                    @db.Timestamp(0)
+  updated_at                 DateTime?                    @db.Timestamp(0)
+  ordenes                    ordenes?                     @relation(fields: [ordenes_id], references: [id_orden], onDelete: Cascade, onUpdate: NoAction, map: "correciones_ordenes_ordenes_id_foreign")
+  fases_correcciones_ordenes fases_correcciones_ordenes[]
+
+  @@index([ordenes_id], map: "correciones_ordenes_ordenes_id_foreign")
+}
+
+model cristales {
+  id         Int       @id @default(autoincrement())
+  codigo     String?   @db.VarChar(100)
+  nombre     String?   @db.VarChar(200)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model documentos_pacientes {
+  id_documento Int      @id @default(autoincrement())
+  url          String   @db.VarChar(250)
+  nombre       String   @db.VarChar(120)
+  id_paciente  Int
+  fecha        DateTime @db.Date
+}
+
+model fases_correcciones_ordenes {
+  id                            Int                 @id @default(autoincrement())
+  tipo_fase_correccion_orden_id Int
+  correccion_ordenes_id         Int
+  laboratorio                   String?             @db.VarChar(45)
+  observacion                   String?             @db.VarChar(400)
+  proveedor_material            String?             @db.VarChar(3000)
+  fecha_fase                    String?             @db.VarChar(45)
+  status                        Boolean?
+  elaborado_por                 Int?
+  created_at                    DateTime?           @db.Timestamp(0)
+  updated_at                    DateTime?           @db.Timestamp(0)
+  correciones_ordenes           correciones_ordenes @relation(fields: [correccion_ordenes_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fases_correcciones_ordenes_correccion_ordenes_id_foreign")
+
+  @@index([correccion_ordenes_id], map: "fases_correcciones_ordenes_correccion_ordenes_id_foreign")
+}
+
+model fases_ordenes {
+  id                 Int       @id @default(autoincrement())
+  tipo_fase_orden_id Int
+  ordenes_id         BigInt    @db.UnsignedBigInt
+  laboratorio        String?   @db.VarChar(100)
+  observacion        String?   @db.VarChar(400)
+  proveedor_material String?   @db.VarChar(255)
+  fecha_fase         String?   @db.VarChar(100)
+  created_at         DateTime? @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
+  status             Boolean?  @default(true)
+  elaborado_por      Int?
+  ordenes            ordenes   @relation(fields: [ordenes_id], references: [id_orden], onDelete: Cascade, onUpdate: NoAction, map: "fases_ordenes_ordenes_id_foreign")
+
+  @@index([ordenes_id], map: "fases_ordenes_ordenes_id_foreign")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model historia_clinica {
+  id_consulta    Int
+  sucursal       Int
+  doctor         String @db.VarChar(255)
+  paciente       Int
+  id_terapia     Int
+  edad           Int
+  fecha_atencion Int
+  m_c            String @db.Text
+
+  @@ignore
+}
+
+model marcas {
+  id             Int       @id @default(autoincrement())
+  codigo         String?   @db.VarChar(150)
+  nombre         String?   @db.VarChar(150)
+  lente_contacto Boolean?
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+}
+
+model materiales {
+  id         Int       @id @default(autoincrement())
+  codigo     String?   @db.VarChar(100)
+  nombre     String?   @db.VarChar(200)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model nro_ordenes {
+  id         Int       @id @default(autoincrement())
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model optometria_neonatos {
+  id_consulta            Int       @id @default(autoincrement())
+  sucursal               Int
+  doctor                 String    @db.VarChar(255)
+  paciente               Int
+  id_terapia             Int
+  edad                   Int?
+  fecha_atencion         DateTime? @db.Date
+  m_c                    String    @db.Text
+  a_o                    String    @db.VarChar(255)
+  a_p                    String?   @db.VarChar(255)
+  a_f                    String    @db.VarChar(255)
+  medicamentos           String    @db.VarChar(255)
+  tratamientos           String    @db.VarChar(255)
+  desarrollo             String    @db.VarChar(255)
+  nacimiento             String    @db.VarChar(255)
+  parto                  String    @db.VarChar(255)
+  gateo                  String    @db.VarChar(255)
+  lenguaje               String    @db.VarChar(255)
+  complicaciones         String    @db.VarChar(255)
+  perinatales            String    @db.VarChar(255)
+  postnatales            String    @db.VarChar(255)
+  agudeza_visual         String    @db.VarChar(350)
+  lensometria            String    @db.VarChar(350)
+  lensometria_extra      String    @db.VarChar(200)
+  sa_pp                  String    @db.VarChar(300)
+  pruebas_extras         String    @db.VarChar(500)
+  refraccion             String    @db.VarChar(500)
+  conducta_seguir        String    @db.Text
+  plan_versiones         String    @db.Text
+  fecha_creacion         DateTime  @db.DateTime(0)
+  editado                String?   @db.VarChar(255)
+  fecha_proxima_consulta DateTime? @db.DateTime(0)
+  hubo_contacto          Boolean   @default(false)
+  se_agendo              Boolean   @default(false)
+  id_usuario_contacto    Int?
+  nota_contacto          String?   @db.Text
+  fecha_contacto         DateTime? @db.DateTime(0)
+  usuarios               usuarios? @relation(fields: [id_usuario_contacto], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction, map: "fk_optometria_neonatos_usuarios")
+
+  @@index([id_usuario_contacto], map: "fk_optometria_neonatos_usuarios")
+}
+
+model optometria_pediatrica {
+  id_consulta            Int       @id @default(autoincrement())
+  sucursal               Int
+  doctor                 String    @db.VarChar(255)
+  paciente               Int
+  id_terapia             Int
+  edad                   Int
+  fecha_atencion         DateTime? @db.Date
+  m_c                    String    @db.Text
+  a_o                    String    @db.VarChar(255)
+  a_p                    String    @db.VarChar(255)
+  a_f                    String    @db.VarChar(255)
+  medicamentos           String    @db.VarChar(255)
+  tratamientos           String    @db.VarChar(255)
+  desarrollo             String    @db.VarChar(255)
+  nacimiento             String    @db.VarChar(255)
+  parto                  String    @db.VarChar(255)
+  incubadora             String    @db.VarChar(255)
+  tiempo                 String    @db.VarChar(255)
+  av_sc                  String    @db.VarChar(255)
+  av_cc                  String    @db.VarChar(255)
+  ojo_dominante          String?   @db.VarChar(255)
+  mano_dominante         String?   @db.VarChar(255)
+  lensometria            String    @db.VarChar(400)
+  lensometria_extra      String    @db.VarChar(300)
+  sa_pp                  String    @db.VarChar(300)
+  visuscopia             String    @db.VarChar(500)
+  visuscopia_extra       String    @db.VarChar(400)
+  refraccion             String    @db.VarChar(500)
+  lentes_contacto        String    @db.VarChar(500)
+  pruebas                String    @db.VarChar(400)
+  pruebas_extra          String    @db.VarChar(400)
+  conducta_seguir        String    @db.Text
+  plan_versiones         String    @db.Text
+  fecha_creacion         DateTime  @db.DateTime(0)
+  editado                String?   @db.VarChar(255)
+  fecha_proxima_consulta DateTime? @db.DateTime(0)
+  hubo_contacto          Boolean   @default(false)
+  se_agendo              Boolean   @default(false)
+  id_usuario_contacto    Int?
+  nota_contacto          String?   @db.Text
+  fecha_contacto         DateTime? @db.DateTime(0)
+  usuarios               usuarios? @relation(fields: [id_usuario_contacto], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction, map: "fk_optometria_pediatrica_usuarios")
+
+  @@index([id_usuario_contacto], map: "fk_optometria_pediatrica_usuarios")
+}
+
+model ordenes {
+  id_orden            BigInt                @id @default(autoincrement()) @db.UnsignedBigInt
+  nro_orden           Int?                  @unique(map: "nro_orden")
+  id_paciente         Int
+  id_sucursal         Int
+  elaborado_por       Int?
+  esfera_od           String?               @db.VarChar(100)
+  esfera_oi           String?               @db.VarChar(100)
+  cilindro_od         String?               @db.VarChar(100)
+  cilindro_oi         String?               @db.VarChar(100)
+  eje_od              String?               @db.VarChar(100)
+  eje_oi              String?               @db.VarChar(100)
+  add_od              String?               @db.VarChar(100)
+  add_oi              String?               @db.VarChar(100)
+  prisma_od           String?               @db.VarChar(100)
+  prisma_oi           String?               @db.VarChar(100)
+  distancia_od        String?               @db.VarChar(100)
+  distancia_oi        String?               @db.VarChar(100)
+  altura_od           String?               @db.VarChar(100)
+  altura_oi           String?               @db.VarChar(100)
+  tipo_cristal_od     String?               @db.VarChar(100)
+  tipo_cristal_oi     String?               @db.VarChar(100)
+  material_od         String?               @db.VarChar(100)
+  material_oi         String?               @db.VarChar(100)
+  tratamientos_od     String?               @db.VarChar(100)
+  tratamientos_oi     String?               @db.VarChar(100)
+  aro_centevi         Int?                  @db.UnsignedTinyInt
+  aro_propio          Int?                  @db.UnsignedTinyInt
+  codigo              String?               @db.VarChar(100)
+  color               String?               @db.VarChar(100)
+  marca               String?               @db.VarChar(100)
+  tipo_aro            String?               @db.VarChar(100)
+  doctor              String?               @db.VarChar(100)
+  observaciones       String?               @db.VarChar(400)
+  l_uno               String?               @db.VarChar(100)
+  l_dos               String?               @db.VarChar(100)
+  l_tres              String?               @db.VarChar(100)
+  l_cuatro            String?               @db.VarChar(100)
+  l_cinco             String?               @db.VarChar(100)
+  created_at          DateTime?             @db.Timestamp(0)
+  updated_at          DateTime?             @db.Timestamp(0)
+  pagado              String?               @db.VarChar(100)
+  lente_contacto      Boolean               @default(false)
+  nro_orden_id        Int?
+  correccion          Boolean               @default(false)
+  codigo_cristal      String?               @db.VarChar(150)
+  correciones_ordenes correciones_ordenes[]
+  fases_ordenes       fases_ordenes[]
+}
+
+model ortoptica_adultos {
+  id_consulta            Int       @id @default(autoincrement())
+  sucursal               Int
+  doctor                 String    @db.VarChar(60)
+  paciente               Int
+  id_terapia             Int
+  edad                   Int
+  fecha_atencion         DateTime? @db.Date
+  m_c                    String    @db.Text
+  a_o                    String    @db.VarChar(255)
+  a_p                    String    @db.VarChar(255)
+  a_f                    String    @db.VarChar(255)
+  medicamentos           String    @db.VarChar(255)
+  tratamientos           String    @db.VarChar(255)
+  av_sc                  String    @db.VarChar(350)
+  av_cc                  String    @db.VarChar(350)
+  ojo_dominante          String?   @db.VarChar(255)
+  mano_dominante         String?   @db.VarChar(255)
+  lensometria            String    @db.VarChar(400)
+  lensometria_extra      String    @db.VarChar(300)
+  sa_pp                  String    @db.VarChar(400)
+  visuscopia             String    @db.VarChar(400)
+  visuscopia_extra       String    @db.VarChar(350)
+  refraccion             String    @db.VarChar(350)
+  lentes_contacto        String    @db.VarChar(400)
+  pruebas                String    @db.VarChar(400)
+  pruebas_extra          String    @db.VarChar(300)
+  acomodacion            String    @db.VarChar(400)
+  acomodacion_extra      String    @db.VarChar(300)
+  vergencia              String    @db.VarChar(400)
+  conducta_seguir        String    @db.Text
+  plan_versiones         String    @db.Text
+  fecha_creacion         DateTime  @db.DateTime(0)
+  editado                String?   @db.VarChar(255)
+  fecha_proxima_consulta DateTime? @db.DateTime(0)
+  hubo_contacto          Boolean   @default(false)
+  se_agendo              Boolean   @default(false)
+  id_usuario_contacto    Int?
+  nota_contacto          String?   @db.Text
+  fecha_contacto         DateTime? @db.DateTime(0)
+}
+
+model pacientes {
+  id_paciente      Int      @id @default(autoincrement())
+  sucursal         Int
+  doctor           String   @db.VarChar(60)
+  nombres          String   @db.VarChar(90)
+  apellidos        String   @db.VarChar(90)
+  nro_cedula       String   @db.VarChar(20)
+  email            String   @db.VarChar(40)
+  nro_seguro       String   @db.VarChar(20)
+  fecha_nacimiento DateTime @db.Date
+  genero           String   @db.VarChar(10)
+  lugar_nacimiento String   @db.VarChar(15)
+  direccion        String   @db.VarChar(100)
+  ocupacion        String   @db.VarChar(60)
+  telefono         String   @db.VarChar(50)
+  celular          String   @db.VarChar(50)
+  medico           String   @db.VarChar(20)
+  urgencia         String   @db.VarChar(400)
+  menor            String   @db.VarChar(500)
+  fecha_creacion   DateTime @db.Date
+
+  @@index([sucursal], map: "idx_sucursal")
+}
+
+model pacientesmenores {
+  id_paciente             Int      @id @default(autoincrement())
+  nombres                 String   @db.VarChar(80)
+  apellidos               String   @db.VarChar(80)
+  nro_cedula              String   @db.VarChar(12)
+  nro_seguro              String   @db.VarChar(12)
+  fecha_nacimiento        DateTime @db.Date
+  genero                  String   @db.VarChar(10)
+  lugar_nacimiento        String   @db.VarChar(30)
+  direccion               String   @db.VarChar(100)
+  medico_cabecera         String   @db.VarChar(80)
+  responsable             String   @db.VarChar(80)
+  parentesco              String   @db.VarChar(12)
+  nro_celular_responsable String   @db.VarChar(10)
+  otro_nro_responsable    String   @db.VarChar(10)
+  alergias                String   @db.VarChar(120)
+  urg_responsable         String   @db.VarChar(80)
+  urg_parentesto          String   @db.VarChar(20)
+  urg_celular             String   @db.VarChar(10)
+  fecha_creacion          DateTime @db.DateTime(0)
+}
+
+model permisos {
+  id              Int       @id @default(autoincrement())
+  tipo_permiso_id Int?
+  slug            String?   @db.VarChar(250)
+  ruta            String?   @db.VarChar(150)
+  descripcion     String?   @db.VarChar(250)
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+}
+
+model permisos_tipos_usuarios {
+  id              Int       @id @default(autoincrement())
+  permiso_id      Int?
+  tipo_usuario_id Int?
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt    @db.UnsignedBigInt
+  name           String    @db.VarChar(255)
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?   @db.Text
+  last_used_at   DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model proveedor_de_material {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  nombre     String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model receta {
+  id_receta      Int      @id @default(autoincrement())
+  id_paciente    Int
+  nro_receta     String   @db.VarChar(50)
+  direccion      String   @db.VarChar(200)
+  cedula         String   @db.VarChar(60)
+  telefono       String   @db.VarChar(60)
+  rx             String   @db.Text
+  tipo_lente     String   @db.Text
+  material       String   @db.Text
+  tratamientos   String   @db.Text
+  aro_propio     String   @db.Text
+  observacion    String   @db.VarChar(400)
+  medidas        String   @db.Text
+  sucursal       Int
+  doctor         String   @db.VarChar(60)
+  fecha_creacion DateTime @db.DateTime(0)
+}
+
+model refracciongeneral {
+  id_consulta            Int       @id @default(autoincrement())
+  sucursal               Int
+  doctor                 String    @db.VarChar(255)
+  paciente               Int
+  id_terapia             Int
+  edad                   Int
+  fecha_atencion         DateTime? @db.Date
+  m_c                    String    @db.Text
+  a_o                    String    @db.VarChar(255)
+  a_p                    String    @db.VarChar(255)
+  a_f                    String    @db.VarChar(255)
+  medicamentos           String    @db.VarChar(255)
+  tratamientos           String    @db.VarChar(255)
+  av_sc                  String    @db.VarChar(350)
+  av_cc                  String    @db.VarChar(350)
+  ojo_dominante          String?   @db.VarChar(255)
+  mano_dominante         String?   @db.VarChar(255)
+  lensometria            String    @db.VarChar(400)
+  lensometria_extra      String    @db.VarChar(300)
+  sa_pp                  String    @db.VarChar(400)
+  visuscopia             String    @db.VarChar(400)
+  visuscopia_extra       String    @db.VarChar(350)
+  refraccion             String    @db.VarChar(350)
+  tipo_lentes            String    @db.VarChar(400)
+  lentes_contacto        String    @db.VarChar(400)
+  pruebas                String    @db.VarChar(400)
+  pruebas_extra          String    @db.VarChar(300)
+  acomodacion            String?   @db.VarChar(400)
+  acomodacion_extra      String?   @db.VarChar(300)
+  conducta_seguir        String    @db.Text
+  plan_versiones         String    @db.Text
+  fecha_creacion         DateTime  @db.DateTime(0)
+  editado                String?   @db.VarChar(255)
+  fecha_proxima_consulta DateTime? @db.DateTime(0)
+  hubo_contacto          Boolean   @default(false)
+  se_agendo              Boolean   @default(false)
+  id_usuario_contacto    Int?
+  nota_contacto          String?   @db.Text
+  fecha_contacto         DateTime? @db.DateTime(0)
+  usuarios               usuarios? @relation(fields: [id_usuario_contacto], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction, map: "fk_refracciongeneral_usuarios")
+
+  @@index([id_usuario_contacto], map: "fk_refracciongeneral_usuarios")
+}
+
+model resultados_ortoptica_adultos {
+  id_resultado   Int      @id @default(autoincrement())
+  id_consulta    Int
+  resultado      String   @db.Text
+  fecha_creacion DateTime @db.DateTime(0)
+}
+
+model servicios {
+  id         Int       @id @default(autoincrement())
+  codigo     String    @db.VarChar(50)
+  servicio   String    @db.VarChar(250)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model servicios_proximos_baja_vision {
+  id            Int       @id @default(autoincrement())
+  bajavision_id Int
+  servicios_id  Int
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+}
+
+model servicios_proximos_historias_clinicas {
+  id                 Int       @id @default(autoincrement())
+  historiaclinica_id Int
+  servicios_id       Int
+  created_at         DateTime? @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
+}
+
+model servicios_proximos_optometria_general {
+  id                   Int       @id @default(autoincrement())
+  optometriageneral_id Int
+  servicios_id         Int
+  created_at           DateTime? @db.Timestamp(0)
+  updated_at           DateTime? @db.Timestamp(0)
+}
+
+model servicios_proximos_optometria_neonatos {
+  id                    Int       @id @default(autoincrement())
+  optometriaNeonatos_id Int
+  servicios_id          Int
+  created_at            DateTime? @db.Timestamp(0)
+  updated_at            DateTime? @db.Timestamp(0)
+}
+
+model servicios_proximos_optometria_pediatrica {
+  id                      Int       @id @default(autoincrement())
+  optometriaPediatrica_id Int
+  servicios_id            Int
+  created_at              DateTime? @db.Timestamp(0)
+  updated_at              DateTime? @db.Timestamp(0)
+}
+
+model servicios_proximos_ortoptica_adultos {
+  id                  Int       @id @default(autoincrement())
+  ortopticaAdultos_id Int
+  servicios_id        Int
+  created_at          DateTime? @db.Timestamp(0)
+  updated_at          DateTime? @db.Timestamp(0)
+}
+
+model servicios_realizados_baja_vision {
+  id            Int       @id @default(autoincrement())
+  bajavision_id Int
+  servicios_id  Int
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+}
+
+model servicios_realizados_historias_clinicas {
+  id                 Int       @id @default(autoincrement())
+  historiaclinica_id Int
+  servicios_id       Int
+  created_at         DateTime? @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
+}
+
+model servicios_realizados_optometria_general {
+  id                   Int       @id @default(autoincrement())
+  optometriageneral_id Int
+  servicios_id         Int
+  created_at           DateTime? @db.Timestamp(0)
+  updated_at           DateTime? @db.Timestamp(0)
+}
+
+model servicios_realizados_optometria_neonatos {
+  id                    Int       @id @default(autoincrement())
+  optometriaNeonatos_id Int
+  servicios_id          Int
+  created_at            DateTime? @db.Timestamp(0)
+  updated_at            DateTime? @db.Timestamp(0)
+}
+
+model servicios_realizados_optometria_pediatrica {
+  id                      Int       @id @default(autoincrement())
+  optometriaPediatrica_id Int
+  servicios_id            Int
+  created_at              DateTime? @db.Timestamp(0)
+  updated_at              DateTime? @db.Timestamp(0)
+}
+
+model servicios_realizados_ortoptica_adultos {
+  id                  Int       @id @default(autoincrement())
+  ortopticaAdultos_id Int
+  servicios_id        Int
+  created_at          DateTime? @db.Timestamp(0)
+  updated_at          DateTime? @db.Timestamp(0)
+}
+
+model sucursales {
+  id_sucursal    Int      @id @default(autoincrement())
+  nombre         String   @db.VarChar(60)
+  ubicacion      String   @db.VarChar(100)
+  fecha_creacion DateTime @db.DateTime(0)
+  ubicacion_maps String?  @db.VarChar(800)
+}
+
+model terapia_bajav {
+  id             Int      @id @default(autoincrement())
+  id_terapia     Int
+  sesion         String?  @db.Text
+  completado     Int?     @db.TinyInt
+  pagado         Int?     @db.TinyInt
+  doctor         String   @db.VarChar(60)
+  fecha_creacion DateTime @db.DateTime(0)
+  sucursal       Int?
+}
+
+model terapia_optometria_neonatos {
+  id             Int      @id @default(autoincrement())
+  id_terapia     Int
+  sesion         String?  @db.Text
+  completado     Int?     @db.TinyInt
+  pagado         Int?     @db.TinyInt
+  doctor         String   @db.VarChar(60)
+  fecha_creacion DateTime @db.DateTime(0)
+  sucursal       Int?
+}
+
+model terapia_optometria_pediatrica {
+  id             Int      @id @default(autoincrement())
+  id_terapia     Int
+  sesion         String?  @db.Text
+  completado     Int?     @db.TinyInt
+  pagado         Int?     @db.TinyInt
+  doctor         String   @db.VarChar(60)
+  fecha_creacion DateTime @db.DateTime(0)
+  sucursal       Int?
+}
+
+model terapia_ortoptica_adultos {
+  id             Int      @id @default(autoincrement())
+  id_terapia     Int
+  sesion         String?  @db.Text
+  completado     Int?     @db.TinyInt
+  pagado         Int?     @db.TinyInt
+  doctor         String   @db.VarChar(60)
+  fecha_creacion DateTime @db.DateTime(0)
+  sucursal       Int?
+}
+
+model terapias_bajav {
+  id_terapia     Int      @id @default(autoincrement())
+  id_paciente    Int
+  evaluacion     String?  @db.Text
+  motivo         String?  @db.VarChar(300)
+  fecha_creacion DateTime @db.DateTime(0)
+}
+
+model terapias_optometria_neonatos {
+  id_terapia     Int      @id @default(autoincrement())
+  id_paciente    Int
+  evaluacion     String?  @db.Text
+  motivo         String?  @db.VarChar(300)
+  fecha_creacion DateTime @db.DateTime(0)
+}
+
+model terapias_optometria_pediatrica {
+  id_terapia     Int      @id @default(autoincrement())
+  id_paciente    Int
+  evaluacion     String?  @db.Text
+  motivo         String?  @db.VarChar(300)
+  fecha_creacion DateTime @db.DateTime(0)
+}
+
+model terapias_ortoptica_adultos {
+  id_terapia     Int      @id @default(autoincrement())
+  id_paciente    Int
+  evaluacion     String?  @db.Text
+  motivo         String?  @db.VarChar(300)
+  fecha_creacion DateTime @db.DateTime(0)
+}
+
+model tipos_aros {
+  id         Int       @id @default(autoincrement())
+  nombre     String    @db.VarChar(150)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model tipos_fases_ordenes {
+  id              Int       @id @default(autoincrement())
+  tipo_fase_orden String    @db.VarChar(100)
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+}
+
+model tipos_permisos {
+  id         Int       @id @default(autoincrement())
+  tipo       String?   @db.VarChar(45)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model tipos_usuarios {
+  id           Int       @id @default(autoincrement())
+  tipo_usuario String?   @db.VarChar(250)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+}
+
+model tratamientos {
+  id         Int       @id @default(autoincrement())
+  codigo     String?   @db.VarChar(100)
+  nombre     String?   @db.VarChar(200)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model usuarios {
+  id_usuario            Int                     @id @default(autoincrement())
+  usuario               String                  @db.VarChar(40)
+  nombre                String                  @db.VarChar(60)
+  password              String                  @db.VarChar(60)
+  perfil                String                  @db.Text
+  sucursal              Int?
+  foto                  String?                 @db.Text
+  estado                Int?
+  ultimo_login          DateTime?               @db.DateTime(0)
+  editado               DateTime?               @db.Date
+  tipo_usuario_id       Int?
+  token                 String?                 @db.VarChar(250)
+  conversaciones1       conversaciones[]        @relation("UsuarioConversacion1")
+  conversaciones2       conversaciones[]        @relation("UsuarioConversacion2")
+  mensajes              mensajes[]
+  consultagenerica      consultagenerica[]
+  optometria_neonatos   optometria_neonatos[]
+  optometria_pediatrica optometria_pediatrica[]
+  refracciongeneral     refracciongeneral[]
+}
+
+model conversaciones {
+  id         Int      @id @default(autoincrement())
+  usuario1Id Int
+  usuario2Id Int
+  creadoEn   DateTime @default(now())
+
+  lastMessage      String? // Último mensaje en la conversación
+  lastTime         String? // Hora del último mensaje (puedes cambiarlo a DateTime si lo prefieres)
+  unread           Int? // Mensajes no leídos
+  calendar         Int? // Número de eventos en el calendario
+  lastTimeCalendar DateTime? // Última actividad en el calendario
+
+  usuario1 usuarios   @relation("UsuarioConversacion1", fields: [usuario1Id], references: [id_usuario])
+  usuario2 usuarios   @relation("UsuarioConversacion2", fields: [usuario2Id], references: [id_usuario])
+  mensajes mensajes[]
+
+  @@map("conversaciones")
+}
+
+model mensajes {
+  id             Int      @id @default(autoincrement())
+  conversacionId Int
+  usuarioId      Int
+  emisor         Emisor
+  contenido      String?   @db.Text
+  archivoUrl     String? 
+  tipoArchivo    String? 
+  nombreArchivo  String? 
+  leido          Boolean  @default(false)
+  creadoEn       DateTime @default(now())
+
+  conversacion conversaciones @relation(fields: [conversacionId], references: [id], onDelete: Cascade)
+  usuario      usuarios       @relation(fields: [usuarioId], references: [id_usuario])
+}
+
+enum Emisor {
+  EMISOR
+  RECEPTOR
+}
+
+enum citas_tipo {
+  consulta
+  terapia
+}
