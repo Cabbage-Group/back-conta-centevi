@@ -7,12 +7,13 @@ import { PacientesModule } from './modules/pacientes/pacientes.module';
 import { UsuariosModule } from './modules/usuarios/usuarios.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { UploadModule } from './modules/chat/upload/upload.module';
+import { FilesController } from './modules/files/files.controller';
 
 
 
 @Module({
   imports: [ConfigModule.forRoot() ,UploadFilesModule, UsuariosModule, PacientesModule, ChatModule, UploadModule],
-  controllers: [AppController],
+  controllers: [AppController, FilesController],
   providers: [AppService],
   exports:[ConfigModule],
 })

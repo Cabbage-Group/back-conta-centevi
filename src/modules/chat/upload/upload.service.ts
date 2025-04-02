@@ -25,7 +25,7 @@ export class UploadService {
         fs.writeFileSync(filePath, file.buffer);
 
         return {
-            archivoUrl: `http://localhost:3008/download/${uniqueFileName}`,
+            archivoUrl: `http://127.0.0.1:8000/download/${uniqueFileName}`,
             nombreArchivo: file.originalname,
             tipoArchivo: file.mimetype,
         };
