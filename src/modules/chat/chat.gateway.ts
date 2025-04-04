@@ -4,6 +4,7 @@ import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { Server, Socket } from 'socket.io';
 import { Emisor } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @WebSocketGateway(3009, {
   cors: { origin: '*' },
@@ -15,7 +16,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private connectedUsers = new Map<string, string>();
 
-  constructor(private readonly chatService: ChatService) { }
+  constructor(
+    private readonly chatService: ChatService,
+    private prisma: PrismaService
+  ) { }
 
   handleConnection(@ConnectedSocket() client: Socket) {
     const { id_usuario } = client.handshake.query;
@@ -34,9 +38,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 🔥 Unir al usuario a una sala con su ID
     client.join(id_usuario.toString());
   }
-
-
-
 
   handleDisconnect(@ConnectedSocket() client: Socket) {
     console.log(`🔴 Cliente desconectado: ${client.id}`);
@@ -57,21 +58,55 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { success: true, message: `Usuario ${id_usuario} registrado` };
   }
 
+  @SubscribeMessage("joinChat")
+  async joinChat(
+    @MessageBody() data: { chatId: string; userId: number },
+    @ConnectedSocket() client: Socket
+  ) {
+    client.join(data.chatId);
+
+    const [id1, id2] = data.chatId.split("_").map(Number);
+    
+    const conversacion = await this.prisma.conversaciones.findFirst({
+      where: {
+        OR: [
+          { usuario1Id: id1, usuario2Id: id2 },
+          { usuario1Id: id2, usuario2Id: id1 }
+        ]
+      }
+    });
+    if (conversacion) {
+      await this.chatService.markMessagesAsRead(conversacion.id, data.userId);
+      const updatedConversations = await this.chatService.getConversations(Number(data.userId));
+      this.server.to(client.id).emit("updateConversations", updatedConversations);
+    }
+  }
+
+
+
+  @SubscribeMessage("leaveChat")
+  leaveChat(
+    @MessageBody() data: { chatId: string },
+    @ConnectedSocket() client: Socket
+  ) {
+    client.leave(data.chatId);
+    console.log(`🚪 Usuario salió de la conversación ${data.chatId}`);
+  }
+
   @SubscribeMessage("createChat")
   async createChat(
     @MessageBody() data: {
       id_usuario: string;
       receptorId: string;
       mensaje?: string;
-      archivoUrl?: string;  
-      tipoArchivo?: string; 
+      archivoUrl?: string;
+      tipoArchivo?: string;
       nombreArchivo?: string;
     },
     @ConnectedSocket() client: Socket
   ) {
     console.log("✉️ Nuevo mensaje recibido:", data);
 
-    // Convertir IDs a números
     const id_usuario = Number(data.id_usuario);
     const receptorId = Number(data.receptorId);
 
@@ -79,39 +114,51 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit("error", { message: "Faltan datos para enviar el mensaje" });
       return;
     }
-    
 
     try {
-      // 1️⃣ Obtener o crear la conversación
-      let conversacion = await this.chatService.getOrCreateConversacion(id_usuario, receptorId);
 
-      // 2️⃣ Verificar si el receptor está en línea
+      let conversacionEmisor = await this.chatService.getOrCreateConversacion(id_usuario, receptorId);
+
+      let conversacionReceptor = await this.chatService.getOrCreateConversacion(receptorId, id_usuario);
+
+      const chatId = [id_usuario, receptorId].sort().join("_");
+
       const receptorSocket = [...this.server.sockets.sockets.values()]
-        .find(socket => socket.rooms.has(receptorId.toString()));
+        .find(socket =>
+          socket.rooms.has(receptorId.toString()) &&
+          socket.rooms.has(chatId)
+        );
 
-      const leido = receptorSocket ? true : false;
+      const leido = !!receptorSocket;
 
-      // 3️⃣ Guardar el mensaje en la base de datos con el estado de "leído" o "no leído"
       const savedMessage = await this.chatService.saveMessage(
-        conversacion.id,
+        conversacionEmisor.id,
         id_usuario,
         data.mensaje,
         "EMISOR",
         leido,
         data.archivoUrl,
         data.tipoArchivo,
-        data.nombreArchivo
+        data.nombreArchivo,
+        receptorId
       );
 
-      // 4️⃣ Enviar el mensaje al receptor (si está conectado)
-      if (receptorSocket) {
-        this.server.to(receptorId.toString()).emit("onMessage", savedMessage);
-      }
+      const lastMessage = data.mensaje?.trim() || data.nombreArchivo;
 
-      // 5️⃣ Enviar el mensaje también al emisor (para que lo vea en su chat)
-      this.server.to(id_usuario.toString()).emit("onMessage", savedMessage);
+      await this.chatService.updateLastTimeAndMessage(conversacionEmisor.id, lastMessage);
+      await this.chatService.updateLastTimeAndMessage(conversacionReceptor.id, lastMessage);
 
-      // 6️⃣ Confirmar al emisor que el mensaje fue entregado
+
+      const updatedConversationsEmisor = await this.chatService.getConversations(id_usuario);
+      const updatedConversationsReceptor = await this.chatService.getConversations(receptorId);
+
+      this.server.to(client.id).emit("updateConversations", updatedConversationsEmisor);
+      this.server.to(receptorId.toString()).emit("updateConversations", updatedConversationsReceptor);
+
+      this.server.to(chatId).emit("onMessage", savedMessage);
+
+      this.server.to(receptorId.toString()).emit("privateMessage", savedMessage);
+
       client.emit("messageDelivered", savedMessage);
 
     } catch (error) {
@@ -121,85 +168,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
 
-
-  @SubscribeMessage('getMessages')
-  async getMessages(
-    @MessageBody() data: { id_usuario: number; receptorId: number },
+  @SubscribeMessage("markAsRead")
+  async markAsRead(
+    @MessageBody() data: { conversacionId: number; userId: number },
     @ConnectedSocket() client: Socket
   ) {
-    const { id_usuario, receptorId } = data;
-    console.log("📩 Recibiendo datos:", id_usuario, receptorId);
-
-    if (!id_usuario || !receptorId) {
-      console.log("⚠️ Error: Faltan parámetros obligatorios.");
-      client.emit("error", { message: "id_usuario y receptorId son obligatorios" });
-      return;
-    }
-
     try {
-      const result = await this.chatService.getMessages(id_usuario, receptorId);
-      console.log('result:', result)
-      client.emit("messagesFetched", { data: result || { conversacion: null, mensajes: [] } });
+      await this.chatService.markMessagesAsRead(data.conversacionId, data.userId);
+
+      const updatedConversations = await this.chatService.getConversations(data.userId);
+
+      this.server.to(client.id).emit("updateConversations", updatedConversations);
     } catch (error) {
-      console.error("❌ Error en getMessages:", error.message);
-      client.emit("error", { message: "Error al obtener mensajes" });
+      console.error("Error al marcar como leído:", error);
+      client.emit("error", { message: "Error al marcar mensajes como leídos" });
     }
   }
 
 
 
-  // @SubscribeMessage('sendMessage')
-  // async sendMessage(@MessageBody() body: { id_usuario: number; receptorId: number; mensaje: string; emisor: string }) {
-  //   const { id_usuario, receptorId, mensaje, emisor } = body;
-
-  //   if (!id_usuario || !receptorId || !mensaje) {
-  //     console.log('⚠️ Faltan datos para enviar mensaje');
-  //     return;
-  //   }
-
-  //   console.log(`📨 Nuevo mensaje de ${id_usuario} a ${receptorId}: ${mensaje}`);
-
-  //   let conversacion = await this.chatService.findConversation(id_usuario, receptorId);
-
-  //   if (!conversacion) {
-  //     conversacion = await this.chatService.createConversation(id_usuario, receptorId);
-  //   }
-
-  //   const emisorEnum = emisor === 'EMISOR' ? Emisor.EMISOR : Emisor.RECEPTOR;
-
-  //   // Verificar si el receptor está conectado
-  //   const receptorSocketId = [...this.connectedUsers.entries()]
-  //     .find(([_, userId]) => Number(userId) === receptorId)?.[0];
-
-  //   const emisorSocketId = [...this.connectedUsers.entries()]
-  //     .find(([_, userId]) => Number(userId) === id_usuario)?.[0];
-
-  //   // ✅ Si el receptor está conectado, guardar el mensaje como leído
-  //   const leido = receptorSocketId ? true : false;
-
-  //   // Guardar mensaje en la BD con el estado correcto
-  //   const newMessage = await this.chatService.saveMessage(conversacion.id, id_usuario, mensaje, emisorEnum, leido);
-
-  //   // Mensaje que se enviará a ambos
-  //   const messageData = {
-  //     conversacionId: conversacion.id,
-  //     id_usuario,
-  //     receptorId,
-  //     mensaje: newMessage.contenido,
-  //     creadoEn: newMessage.creadoEn,
-  //     leido: newMessage.leido, // ✅ Ahora se envía el estado de lectura
-  //   };
-
-  //   // Enviar mensaje al receptor si está conectado
-  //   if (receptorSocketId) {
-  //     this.server.to(receptorSocketId).emit('onMessage', messageData);
-  //   }
-
-  //   // Enviar mensaje al emisor para actualizar la UI
-  //   if (emisorSocketId) {
-  //     this.server.to(emisorSocketId).emit('onMessage', messageData);
-  //   }
-  // }
 
 
 

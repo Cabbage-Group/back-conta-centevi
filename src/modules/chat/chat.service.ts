@@ -13,15 +13,21 @@ export class ChatService {
       where: {
         OR: [
           {
-            usuario1Id: parseInt(user1Id.toString(), 10), // Convertir a número
-            usuario2Id: parseInt(user2Id.toString(), 10)  // Convertir a número
+            usuario1Id: parseInt(user1Id.toString(), 10),
+            usuario2Id: parseInt(user2Id.toString(), 10)
           },
+
           {
             usuario1Id: parseInt(user2Id.toString(), 10),
             usuario2Id: parseInt(user1Id.toString(), 10)
           }
         ]
+      },
+      include: {
+        usuario1: { select: { nombre: true } },
+        usuario2: { select: { nombre: true } }
       }
+
     });
   }
 
@@ -43,22 +49,33 @@ export class ChatService {
     leido?: boolean,
     archivoUrl?: string,
     tipoArchivo?: string,
-    nombreArchivo?: string
+    nombreArchivo?: string,
+    receptorId?: number
   ) {
-    console.log('entre')
-    return await this.prisma.mensajes.create({
+    const savedMessage = await this.prisma.mensajes.create({
       data: {
         conversacionId,
         usuarioId,
         emisor,
         contenido: mensaje,
-        leido, 
+        leido,
         archivoUrl,
         tipoArchivo,
         nombreArchivo
       },
     });
+
+    if (receptorId) {
+      const messageDate = savedMessage.creadoEn; 
+      await this.prisma.usuarios.update({
+        where: { id_usuario: receptorId },
+        data: { fecha_ultima_conversacion: messageDate },
+      });
+    }
+
+    return savedMessage;
   }
+
 
 
   async getOrCreateConversacion(usuario1: number, usuario2: number) {
@@ -80,18 +97,19 @@ export class ChatService {
     return conversacion;
   }
 
-
-
   async getMessages(id_usuario: number, receptorId: number) {
     const conversation = await this.findConversation(id_usuario, receptorId);
 
     if (!conversation) {
-      return null; // Si no hay conversación, devolvemos null
+      return null; 
     }
 
     const messages = await this.prisma.mensajes.findMany({
       where: { conversacionId: conversation.id },
-      orderBy: { creadoEn: 'asc' }, // Ordenar por fecha de creación
+      include: {
+        usuario: { select: { nombre: true } }
+      },
+      orderBy: { creadoEn: 'asc' },
     });
 
     return {
@@ -100,22 +118,89 @@ export class ChatService {
     };
   }
 
-
-
-  // Obtener todas las conversaciones de un usuario
-  async getUserConversations(usuarioId: number) {
-    return this.prisma.conversaciones.findMany({
+  async getConversations(userId: number) {
+    const conversations = await this.prisma.conversaciones.findMany({
       where: {
-        OR: [
-          { usuario1Id: parseInt(usuarioId.toString(), 10) },
-          { usuario2Id: parseInt(usuarioId.toString(), 10) }
-        ]
+        OR: [{ usuario1Id: userId }, { usuario2Id: userId }]
       },
       include: {
+        usuario1: {
+          select: { id_usuario: true, nombre: true, foto: true }
+        },
+        usuario2: {
+          select: { id_usuario: true, nombre: true, foto: true }
+        },
         mensajes: {
-          orderBy: { creadoEn: 'desc' },
-          take: 1
+          orderBy: { creadoEn: "desc" },     
+          select: { contenido: true, creadoEn: true, leido: true, usuarioId: true } 
         }
+      },
+      orderBy: {
+        lastTime: "desc"
+      }
+    });
+
+    return conversations.map(conversation => {
+      const otherUser = conversation.usuario1Id === userId ? conversation.usuario2 : conversation.usuario1;
+      const lastMessage = conversation.mensajes[0];
+
+      const unreadCount = conversation.mensajes.filter(
+        m => !m.leido && m.usuarioId !== userId
+      ).length;
+
+      return {
+        conversationId: conversation.id,
+        userId: otherUser.id_usuario,
+        name: otherUser.nombre,
+        profilePicture: otherUser.foto,
+        lastMessage: lastMessage?.contenido || "Sin mensajes",
+        lastMessageTime: lastMessage?.creadoEn || conversation.lastTime || conversation.creadoEn,
+        unreadMessages: unreadCount
+      };
+    });
+  }
+
+  async updateLastTimeAndMessage(conversacionId: number, lastMessage: string) {
+    try {
+      await this.prisma.conversaciones.update({
+        where: { id: conversacionId },
+        data: {
+          lastTime: new Date(),
+          lastMessage: lastMessage,
+        },
+      });
+    } catch (error) {
+      console.error("Error al actualizar lastTime y lastMessage:", error);
+      throw new Error("Error al actualizar lastTime y lastMessage de la conversación");
+    }
+  }
+
+  async incrementUnreadCount(conversacionId: number) {
+    try {
+      await this.prisma.conversaciones.update({
+        where: { id: conversacionId },
+        data: {
+          unread: {
+            increment: 1,  // Suma 1 al contador de mensajes no leídos
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error al incrementar unread:", error);
+      throw new Error("Error al actualizar unread en la conversación");
+    }
+  }
+
+  async markMessagesAsRead(conversationId: number, userId: number) {
+    // Marcar solo los mensajes que NO envió el usuario y aún no han sido leídos
+    await this.prisma.mensajes.updateMany({
+      where: {
+        conversacionId: conversationId,
+        usuarioId: { not: Number(userId) },
+        leido: false
+      },
+      data: {
+        leido: true
       }
     });
   }
