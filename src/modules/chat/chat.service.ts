@@ -67,10 +67,10 @@ export class ChatService {
 
     if (receptorId) {
       const messageDate = savedMessage.creadoEn; 
-      await this.prisma.usuarios.update({
-        where: { id_usuario: receptorId },
-        data: { fecha_ultima_conversacion: messageDate },
-      });
+      // await this.prisma.usuarios.update({
+      //   where: { id_usuario: receptorId },
+      //   data: { fecha_ultima_conversacion: messageDate },
+      // });
     }
 
     return savedMessage;

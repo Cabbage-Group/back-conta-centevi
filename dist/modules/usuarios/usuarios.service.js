@@ -22,6 +22,56 @@ let UsuariosService = class UsuariosService {
     async findAll() {
         return await this.prismaService.usuarios.findMany();
     }
+    async getUsersOrderedByLastConversationPrismaNative(idUsuarioActual) {
+        const conversaciones = await this.prismaService.conversaciones.findMany({
+            where: {
+                OR: [
+                    { usuario1Id: idUsuarioActual },
+                    { usuario2Id: idUsuarioActual }
+                ]
+            },
+            include: {
+                mensajes: {
+                    orderBy: {
+                        creadoEn: 'desc'
+                    },
+                    take: 1
+                }
+            }
+        });
+        const usuariosConFecha = new Map();
+        for (const conv of conversaciones) {
+            const otroUsuarioId = conv.usuario1Id === idUsuarioActual
+                ? conv.usuario2Id
+                : conv.usuario1Id;
+            if (conv.mensajes.length > 0) {
+                const fechaMensaje = conv.mensajes[0].creadoEn;
+                if (!usuariosConFecha.has(otroUsuarioId) ||
+                    fechaMensaje > usuariosConFecha.get(otroUsuarioId)) {
+                    usuariosConFecha.set(otroUsuarioId, fechaMensaje);
+                }
+            }
+        }
+        const usuarios = await this.prismaService.usuarios.findMany({
+            where: {
+                NOT: {
+                    id_usuario: idUsuarioActual
+                }
+            }
+        });
+        return usuarios.sort((a, b) => {
+            const fechaA = usuariosConFecha.get(a.id_usuario);
+            const fechaB = usuariosConFecha.get(b.id_usuario);
+            if (fechaA && fechaB) {
+                return fechaB.getTime() - fechaA.getTime();
+            }
+            if (fechaA)
+                return -1;
+            if (fechaB)
+                return 1;
+            return a.nombre.localeCompare(b.nombre);
+        });
+    }
     findOne(id) {
         return `This action returns a #${id} usuario`;
     }

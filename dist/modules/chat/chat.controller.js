@@ -27,6 +27,11 @@ let ChatController = class ChatController {
         }
         return { data: result };
     }
+    async getUserConversations(body) {
+        const { id_usuario } = body;
+        const conversations = await this.chatService.getConversations(id_usuario);
+        return { data: conversations };
+    }
 };
 exports.ChatController = ChatController;
 __decorate([
@@ -36,6 +41,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], ChatController.prototype, "getMessages", null);
+__decorate([
+    (0, common_1.Post)('conversations'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ChatController.prototype, "getUserConversations", null);
 exports.ChatController = ChatController = __decorate([
     (0, common_1.Controller)('chat'),
     __metadata("design:paramtypes", [chat_service_1.ChatService])

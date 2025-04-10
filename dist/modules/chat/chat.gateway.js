@@ -16,9 +16,11 @@ exports.ChatGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
 const chat_service_1 = require("./chat.service");
 const socket_io_1 = require("socket.io");
+const prisma_service_1 = require("../../prisma/prisma.service");
 let ChatGateway = class ChatGateway {
-    constructor(chatService) {
+    constructor(chatService, prisma) {
         this.chatService = chatService;
+        this.prisma = prisma;
         this.connectedUsers = new Map();
     }
     handleConnection(client) {
@@ -46,6 +48,27 @@ let ChatGateway = class ChatGateway {
         console.log(`✅ Usuario registrado: ${id_usuario} con socket ID: ${client.id}`);
         return { success: true, message: `Usuario ${id_usuario} registrado` };
     }
+    async joinChat(data, client) {
+        client.join(data.chatId);
+        const [id1, id2] = data.chatId.split("_").map(Number);
+        const conversacion = await this.prisma.conversaciones.findFirst({
+            where: {
+                OR: [
+                    { usuario1Id: id1, usuario2Id: id2 },
+                    { usuario1Id: id2, usuario2Id: id1 }
+                ]
+            }
+        });
+        if (conversacion) {
+            await this.chatService.markMessagesAsRead(conversacion.id, data.userId);
+            const updatedConversations = await this.chatService.getConversations(Number(data.userId));
+            this.server.to(client.id).emit("updateConversations", updatedConversations);
+        }
+    }
+    leaveChat(data, client) {
+        client.leave(data.chatId);
+        console.log(`🚪 Usuario salió de la conversación ${data.chatId}`);
+    }
     async createChat(data, client) {
         console.log("✉️ Nuevo mensaje recibido:", data);
         const id_usuario = Number(data.id_usuario);
@@ -55,15 +78,23 @@ let ChatGateway = class ChatGateway {
             return;
         }
         try {
-            let conversacion = await this.chatService.getOrCreateConversacion(id_usuario, receptorId);
+            let conversacionEmisor = await this.chatService.getOrCreateConversacion(id_usuario, receptorId);
+            let conversacionReceptor = await this.chatService.getOrCreateConversacion(receptorId, id_usuario);
+            const chatId = [id_usuario, receptorId].sort().join("_");
             const receptorSocket = [...this.server.sockets.sockets.values()]
-                .find(socket => socket.rooms.has(receptorId.toString()));
-            const leido = receptorSocket ? true : false;
-            const savedMessage = await this.chatService.saveMessage(conversacion.id, id_usuario, data.mensaje, "EMISOR", leido, data.archivoUrl, data.tipoArchivo, data.nombreArchivo);
-            if (receptorSocket) {
-                this.server.to(receptorId.toString()).emit("onMessage", savedMessage);
-            }
-            this.server.to(id_usuario.toString()).emit("onMessage", savedMessage);
+                .find(socket => socket.rooms.has(receptorId.toString()) &&
+                socket.rooms.has(chatId));
+            const leido = !!receptorSocket;
+            const savedMessage = await this.chatService.saveMessage(conversacionEmisor.id, id_usuario, data.mensaje, "EMISOR", leido, data.archivoUrl, data.tipoArchivo, data.nombreArchivo, receptorId);
+            const lastMessage = data.mensaje?.trim() || data.nombreArchivo;
+            await this.chatService.updateLastTimeAndMessage(conversacionEmisor.id, lastMessage);
+            await this.chatService.updateLastTimeAndMessage(conversacionReceptor.id, lastMessage);
+            const updatedConversationsEmisor = await this.chatService.getConversations(id_usuario);
+            const updatedConversationsReceptor = await this.chatService.getConversations(receptorId);
+            this.server.to(client.id).emit("updateConversations", updatedConversationsEmisor);
+            this.server.to(receptorId.toString()).emit("updateConversations", updatedConversationsReceptor);
+            this.server.to(chatId).emit("onMessage", savedMessage);
+            this.server.to(receptorId.toString()).emit("privateMessage", savedMessage);
             client.emit("messageDelivered", savedMessage);
         }
         catch (error) {
@@ -71,22 +102,15 @@ let ChatGateway = class ChatGateway {
             client.emit("error", { message: "Error al enviar mensaje" });
         }
     }
-    async getMessages(data, client) {
-        const { id_usuario, receptorId } = data;
-        console.log("📩 Recibiendo datos:", id_usuario, receptorId);
-        if (!id_usuario || !receptorId) {
-            console.log("⚠️ Error: Faltan parámetros obligatorios.");
-            client.emit("error", { message: "id_usuario y receptorId son obligatorios" });
-            return;
-        }
+    async markAsRead(data, client) {
         try {
-            const result = await this.chatService.getMessages(id_usuario, receptorId);
-            console.log('result:', result);
-            client.emit("messagesFetched", { data: result || { conversacion: null, mensajes: [] } });
+            await this.chatService.markMessagesAsRead(data.conversacionId, data.userId);
+            const updatedConversations = await this.chatService.getConversations(data.userId);
+            this.server.to(client.id).emit("updateConversations", updatedConversations);
         }
         catch (error) {
-            console.error("❌ Error en getMessages:", error.message);
-            client.emit("error", { message: "Error al obtener mensajes" });
+            console.error("Error al marcar como leído:", error);
+            client.emit("error", { message: "Error al marcar mensajes como leídos" });
         }
     }
 };
@@ -116,6 +140,22 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ChatGateway.prototype, "registerUser", null);
 __decorate([
+    (0, websockets_1.SubscribeMessage)("joinChat"),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], ChatGateway.prototype, "joinChat", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)("leaveChat"),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
+    __metadata("design:returntype", void 0)
+], ChatGateway.prototype, "leaveChat", null);
+__decorate([
     (0, websockets_1.SubscribeMessage)("createChat"),
     __param(0, (0, websockets_1.MessageBody)()),
     __param(1, (0, websockets_1.ConnectedSocket)()),
@@ -124,17 +164,18 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ChatGateway.prototype, "createChat", null);
 __decorate([
-    (0, websockets_1.SubscribeMessage)('getMessages'),
+    (0, websockets_1.SubscribeMessage)("markAsRead"),
     __param(0, (0, websockets_1.MessageBody)()),
     __param(1, (0, websockets_1.ConnectedSocket)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
     __metadata("design:returntype", Promise)
-], ChatGateway.prototype, "getMessages", null);
+], ChatGateway.prototype, "markAsRead", null);
 exports.ChatGateway = ChatGateway = __decorate([
     (0, websockets_1.WebSocketGateway)(3009, {
         cors: { origin: '*' },
     }),
-    __metadata("design:paramtypes", [chat_service_1.ChatService])
+    __metadata("design:paramtypes", [chat_service_1.ChatService,
+        prisma_service_1.PrismaService])
 ], ChatGateway);
 //# sourceMappingURL=chat.gateway.js.map

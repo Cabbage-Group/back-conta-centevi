@@ -17,9 +17,11 @@ const common_1 = require("@nestjs/common");
 const usuarios_service_1 = require("./usuarios.service");
 const create_usuario_dto_1 = require("./dto/create-usuario.dto");
 const update_usuario_dto_1 = require("./dto/update-usuario.dto");
+const prisma_service_1 = require("../../prisma/prisma.service");
 let UsuariosController = class UsuariosController {
-    constructor(usuariosService) {
+    constructor(usuariosService, prisma) {
         this.usuariosService = usuariosService;
+        this.prisma = prisma;
     }
     create(createUsuarioDto) {
         return this.usuariosService.create(createUsuarioDto);
@@ -75,6 +77,7 @@ __decorate([
 ], UsuariosController.prototype, "remove", null);
 exports.UsuariosController = UsuariosController = __decorate([
     (0, common_1.Controller)('usuarios'),
-    __metadata("design:paramtypes", [usuarios_service_1.UsuariosService])
+    __metadata("design:paramtypes", [usuarios_service_1.UsuariosService,
+        prisma_service_1.PrismaService])
 ], UsuariosController);
 //# sourceMappingURL=usuarios.controller.js.map
