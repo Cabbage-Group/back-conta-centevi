@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { ChatService } from './chat.service';
 
 @Controller('chat')
@@ -15,6 +15,13 @@ export class ChatController {
         }
 
         return { data: result };
+    }
+
+    @Post('conversations')
+    async getUserConversations(@Body() body: { id_usuario: number}){
+        const { id_usuario} = body;
+        const conversations = await this.chatService.getConversations(id_usuario);  
+        return { data: conversations };  
     }
 
 

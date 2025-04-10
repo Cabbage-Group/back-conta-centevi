@@ -809,25 +809,25 @@ model tratamientos {
 }
 
 model usuarios {
-  id_usuario            Int                     @id @default(autoincrement())
-  usuario               String                  @db.VarChar(40)
-  nombre                String                  @db.VarChar(60)
-  password              String                  @db.VarChar(60)
-  perfil                String                  @db.Text
-  sucursal              Int?
-  foto                  String?                 @db.Text
-  estado                Int?
-  ultimo_login          DateTime?               @db.DateTime(0)
-  editado               DateTime?               @db.Date
-  tipo_usuario_id       Int?
-  token                 String?                 @db.VarChar(250)
-  conversaciones1       conversaciones[]        @relation("UsuarioConversacion1")
-  conversaciones2       conversaciones[]        @relation("UsuarioConversacion2")
-  mensajes              mensajes[]
-  consultagenerica      consultagenerica[]
-  optometria_neonatos   optometria_neonatos[]
-  optometria_pediatrica optometria_pediatrica[]
-  refracciongeneral     refracciongeneral[]
+  id_usuario                Int                     @id @default(autoincrement())
+  usuario                   String                  @db.VarChar(40)
+  nombre                    String                  @db.VarChar(60)
+  password                  String                  @db.VarChar(60)
+  perfil                    String                  @db.Text
+  sucursal                  Int?
+  foto                      String?                 @db.Text
+  estado                    Int?
+  ultimo_login              DateTime?               @db.DateTime(0)
+  editado                   DateTime?               @db.Date
+  tipo_usuario_id           Int?
+  token                     String?                 @db.VarChar(250)
+  conversaciones1           conversaciones[]        @relation("UsuarioConversacion1")
+  conversaciones2           conversaciones[]        @relation("UsuarioConversacion2")
+  mensajes                  mensajes[]
+  consultagenerica          consultagenerica[]
+  optometria_neonatos       optometria_neonatos[]
+  optometria_pediatrica     optometria_pediatrica[]
+  refracciongeneral         refracciongeneral[]
 }
 
 model conversaciones {
@@ -837,7 +837,7 @@ model conversaciones {
   creadoEn   DateTime @default(now())
 
   lastMessage      String? // Último mensaje en la conversación
-  lastTime         String? // Hora del último mensaje (puedes cambiarlo a DateTime si lo prefieres)
+  lastTime         DateTime? // Hora del último mensaje (puedes cambiarlo a DateTime si lo prefieres)
   unread           Int? // Mensajes no leídos
   calendar         Int? // Número de eventos en el calendario
   lastTimeCalendar DateTime? // Última actividad en el calendario
@@ -854,10 +854,10 @@ model mensajes {
   conversacionId Int
   usuarioId      Int
   emisor         Emisor
-  contenido      String?   @db.Text
-  archivoUrl     String? 
-  tipoArchivo    String? 
-  nombreArchivo  String? 
+  contenido      String?  @db.Text
+  archivoUrl     String?
+  tipoArchivo    String?
+  nombreArchivo  String?
   leido          Boolean  @default(false)
   creadoEn       DateTime @default(now())
 
