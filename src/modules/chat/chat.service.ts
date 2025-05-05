@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Emisor } from '@prisma/client';
+
 
 @Injectable()
 export class ChatService {
@@ -45,7 +43,6 @@ export class ChatService {
     conversacionId?: number,
     usuarioId?: number,
     mensaje?: string,
-    emisor?: Emisor,
     leido?: boolean,
     archivoUrl?: string,
     tipoArchivo?: string,
@@ -56,7 +53,6 @@ export class ChatService {
       data: {
         conversacionId,
         usuarioId,
-        emisor,
         contenido: mensaje,
         leido,
         archivoUrl,
@@ -64,15 +60,6 @@ export class ChatService {
         nombreArchivo
       },
     });
-
-    if (receptorId) {
-      const messageDate = savedMessage.creadoEn; 
-      await this.prisma.usuarios.update({
-        where: { id_usuario: receptorId },
-        data: { fecha_ultima_conversacion: messageDate },
-      });
-    }
-
     return savedMessage;
   }
 

@@ -1,9 +1,6 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, OnGatewayConnection, OnGatewayDisconnect, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
 import { ChatService } from './chat.service';
-import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
 import { Server, Socket } from 'socket.io';
-import { Emisor } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @WebSocketGateway(3009, {
@@ -135,7 +132,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         conversacionEmisor.id,
         id_usuario,
         data.mensaje,
-        "EMISOR",
         leido,
         data.archivoUrl,
         data.tipoArchivo,
