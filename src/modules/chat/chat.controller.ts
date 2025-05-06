@@ -8,7 +8,7 @@ export class ChatController {
     @Post('messages')
     async getMessages(@Body() body: { id_usuario: number; receptorId: number }) {
         const { id_usuario, receptorId } = body;
-        const result = await this.chatService.getMessages(id_usuario, receptorId);
+        const result = await this.chatService.getMessages(+id_usuario, +receptorId);
 
         if (!result) {
             return { data: { mensaje: 'No hay conversación existente.', conversacion: null, mensajes: [] } };
