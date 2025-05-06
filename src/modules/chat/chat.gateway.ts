@@ -4,7 +4,11 @@ import { Server, Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @WebSocketGateway(3009, {
-  cors: { origin: '*' },
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
@@ -63,7 +67,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.join(data.chatId);
 
     const [id1, id2] = data.chatId.split("_").map(Number);
-    
+
     const conversacion = await this.prisma.conversaciones.findFirst({
       where: {
         OR: [

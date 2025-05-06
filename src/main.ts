@@ -11,6 +11,7 @@ async function bootstrap() {
     origin: ['http://127.0.0.1:8000', 'https://contabilidad.centevi.digital', 'https://centevi-laravel.centevi.digital'],
     methods: 'GET, POST, PUT, DELETE', // Métodos permitidos
     allowedHeaders: 'Content-Type, Authorization, x-requested-with', // Encabezados permitidos
+    credentials: true
   });
   await app.listen(process.env.PORT);
 }
