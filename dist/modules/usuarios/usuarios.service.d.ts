@@ -18,7 +18,6 @@ export declare class UsuariosService {
         editado: Date | null;
         tipo_usuario_id: number | null;
         token: string | null;
-        fecha_ultima_conversacion: string | null;
     }[]>;
     getUsersOrderedByLastConversationPrismaNative(idUsuarioActual: number): Promise<{
         id_usuario: number;
@@ -33,7 +32,6 @@ export declare class UsuariosService {
         editado: Date | null;
         tipo_usuario_id: number | null;
         token: string | null;
-        fecha_ultima_conversacion: string | null;
     }[]>;
     findOne(id: number): string;
     update(id: number, updateUsuarioDto: UpdateUsuarioDto): string;

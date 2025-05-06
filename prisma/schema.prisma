@@ -853,7 +853,6 @@ model mensajes {
   id             Int      @id @default(autoincrement())
   conversacionId Int
   usuarioId      Int
-  emisor         Emisor
   contenido      String?  @db.Text
   archivoUrl     String?
   tipoArchivo    String?
@@ -865,10 +864,7 @@ model mensajes {
   usuario      usuarios       @relation(fields: [usuarioId], references: [id_usuario])
 }
 
-enum Emisor {
-  EMISOR
-  RECEPTOR
-}
+
 
 enum citas_tipo {
   consulta

@@ -20,7 +20,6 @@ export declare class UsuariosController {
         editado: Date | null;
         tipo_usuario_id: number | null;
         token: string | null;
-        fecha_ultima_conversacion: string | null;
     }[]>;
     findOne(id: string): string;
     update(id: string, updateUsuarioDto: UpdateUsuarioDto): string;

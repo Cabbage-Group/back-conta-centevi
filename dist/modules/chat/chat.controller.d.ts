@@ -40,7 +40,6 @@ export declare class ChatController {
                 creadoEn: Date;
                 conversacionId: number;
                 usuarioId: number;
-                emisor: import(".prisma/client").$Enums.Emisor;
                 contenido: string | null;
                 archivoUrl: string | null;
                 tipoArchivo: string | null;

@@ -85,7 +85,7 @@ let ChatGateway = class ChatGateway {
                 .find(socket => socket.rooms.has(receptorId.toString()) &&
                 socket.rooms.has(chatId));
             const leido = !!receptorSocket;
-            const savedMessage = await this.chatService.saveMessage(conversacionEmisor.id, id_usuario, data.mensaje, "EMISOR", leido, data.archivoUrl, data.tipoArchivo, data.nombreArchivo, receptorId);
+            const savedMessage = await this.chatService.saveMessage(conversacionEmisor.id, id_usuario, data.mensaje, leido, data.archivoUrl, data.tipoArchivo, data.nombreArchivo, receptorId);
             const lastMessage = data.mensaje?.trim() || data.nombreArchivo;
             await this.chatService.updateLastTimeAndMessage(conversacionEmisor.id, lastMessage);
             await this.chatService.updateLastTimeAndMessage(conversacionReceptor.id, lastMessage);

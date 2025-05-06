@@ -1,5 +1,4 @@
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Emisor } from '@prisma/client';
 export declare class ChatService {
     private prisma;
     constructor(prisma: PrismaService);
@@ -32,12 +31,11 @@ export declare class ChatService {
         calendar: number | null;
         lastTimeCalendar: Date | null;
     }>;
-    saveMessage(conversacionId?: number, usuarioId?: number, mensaje?: string, emisor?: Emisor, leido?: boolean, archivoUrl?: string, tipoArchivo?: string, nombreArchivo?: string, receptorId?: number): Promise<{
+    saveMessage(conversacionId?: number, usuarioId?: number, mensaje?: string, leido?: boolean, archivoUrl?: string, tipoArchivo?: string, nombreArchivo?: string, receptorId?: number): Promise<{
         id: number;
         creadoEn: Date;
         conversacionId: number;
         usuarioId: number;
-        emisor: import(".prisma/client").$Enums.Emisor;
         contenido: string | null;
         archivoUrl: string | null;
         tipoArchivo: string | null;
@@ -83,7 +81,6 @@ export declare class ChatService {
             creadoEn: Date;
             conversacionId: number;
             usuarioId: number;
-            emisor: import(".prisma/client").$Enums.Emisor;
             contenido: string | null;
             archivoUrl: string | null;
             tipoArchivo: string | null;

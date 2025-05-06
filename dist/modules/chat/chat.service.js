@@ -44,12 +44,11 @@ let ChatService = class ChatService {
             }
         });
     }
-    async saveMessage(conversacionId, usuarioId, mensaje, emisor, leido, archivoUrl, tipoArchivo, nombreArchivo, receptorId) {
+    async saveMessage(conversacionId, usuarioId, mensaje, leido, archivoUrl, tipoArchivo, nombreArchivo, receptorId) {
         const savedMessage = await this.prisma.mensajes.create({
             data: {
                 conversacionId,
                 usuarioId,
-                emisor,
                 contenido: mensaje,
                 leido,
                 archivoUrl,
@@ -57,9 +56,6 @@ let ChatService = class ChatService {
                 nombreArchivo
             },
         });
-        if (receptorId) {
-            const messageDate = savedMessage.creadoEn;
-        }
         return savedMessage;
     }
     async getOrCreateConversacion(usuario1, usuario2) {
