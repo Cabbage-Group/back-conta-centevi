@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EstadoMensaje } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 
@@ -42,6 +43,7 @@ export class ChatService {
   async saveMessage(
     conversacionId?: number,
     usuarioId?: number,
+    estado?: EstadoMensaje,
     mensaje?: string,
     leido?: boolean,
     archivoUrl?: string,
@@ -53,6 +55,7 @@ export class ChatService {
       data: {
         conversacionId,
         usuarioId,
+        estado: estado,
         contenido: mensaje,
         leido,
         archivoUrl,
@@ -88,7 +91,7 @@ export class ChatService {
     const conversation = await this.findConversation(id_usuario, receptorId);
 
     if (!conversation) {
-      return null; 
+      return null;
     }
 
     const messages = await this.prisma.mensajes.findMany({
@@ -118,8 +121,8 @@ export class ChatService {
           select: { id_usuario: true, nombre: true, foto: true }
         },
         mensajes: {
-          orderBy: { creadoEn: "desc" },     
-          select: { contenido: true, creadoEn: true, leido: true, usuarioId: true } 
+          orderBy: { creadoEn: "desc" },
+          select: { contenido: true, creadoEn: true, leido: true, usuarioId: true }
         }
       },
       orderBy: {
@@ -140,7 +143,7 @@ export class ChatService {
         userId: otherUser.id_usuario,
         name: otherUser.nombre,
         profilePicture: otherUser.foto,
-        lastMessage: lastMessage?.contenido || "Sin mensajes",
+        lastMessage: conversation?.lastMessage || "Sin mensajes",
         lastMessageTime: lastMessage?.creadoEn || conversation.lastTime || conversation.creadoEn,
         unreadMessages: unreadCount
       };
