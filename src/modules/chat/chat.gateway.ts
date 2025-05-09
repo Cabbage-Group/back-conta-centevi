@@ -2,6 +2,8 @@ import { WebSocketGateway, SubscribeMessage, MessageBody, OnGatewayConnection, O
 import { ChatService } from './chat.service';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { EstadoMensaje } from '@prisma/client';
+import { Usuario } from '../usuarios/entities/usuario.entity';
 
 @WebSocketGateway(3002, {
   cors: {
@@ -99,10 +101,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: {
       id_usuario: string;
       receptorId: string;
+      estado?: EstadoMensaje;
       mensaje?: string;
       archivoUrl?: string;
       tipoArchivo?: string;
       nombreArchivo?: string;
+      tempId?: string;
     },
     @ConnectedSocket() client: Socket
   ) {
@@ -135,6 +139,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const savedMessage = await this.chatService.saveMessage(
         conversacionEmisor.id,
         id_usuario,
+        data.estado,
         data.mensaje,
         leido,
         data.archivoUrl,
@@ -143,10 +148,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         receptorId
       );
 
-      const lastMessage = data.mensaje?.trim() || data.nombreArchivo;
+      const lastMessage = data.mensaje?.trim() || data.nombreArchivo.trim();
 
-      await this.chatService.updateLastTimeAndMessage(conversacionEmisor.id, lastMessage);
-      await this.chatService.updateLastTimeAndMessage(conversacionReceptor.id, lastMessage);
+      console.log('lastMessage:', lastMessage)
+
+      await this.chatService.updateLastTimeAndMessage(conversacionEmisor.id, lastMessage, id_usuario, receptorId);
+      await this.chatService.updateLastTimeAndMessage(conversacionReceptor.id, lastMessage, id_usuario, receptorId);
 
 
       const updatedConversationsEmisor = await this.chatService.getConversations(id_usuario);
@@ -155,7 +162,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to(client.id).emit("updateConversations", updatedConversationsEmisor);
       this.server.to(receptorId.toString()).emit("updateConversations", updatedConversationsReceptor);
 
-      this.server.to(chatId).emit("onMessage", savedMessage);
+      this.server.to(chatId).emit("onMessage", { ...savedMessage, tempId: data.tempId });
 
       this.server.to(receptorId.toString()).emit("privateMessage", savedMessage);
 
@@ -184,10 +191,4 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit("error", { message: "Error al marcar mensajes como leídos" });
     }
   }
-
-
-
-
-
-
 }

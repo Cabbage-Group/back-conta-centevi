@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { EstadoMensaje } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 
@@ -42,6 +43,7 @@ export class ChatService {
   async saveMessage(
     conversacionId?: number,
     usuarioId?: number,
+    estado?: EstadoMensaje,
     mensaje?: string,
     leido?: boolean,
     archivoUrl?: string,
@@ -53,6 +55,7 @@ export class ChatService {
       data: {
         conversacionId,
         usuarioId,
+        estado: estado,
         contenido: mensaje,
         leido,
         archivoUrl,
@@ -88,7 +91,7 @@ export class ChatService {
     const conversation = await this.findConversation(id_usuario, receptorId);
 
     if (!conversation) {
-      return null; 
+      return null;
     }
 
     const messages = await this.prisma.mensajes.findMany({
@@ -105,7 +108,8 @@ export class ChatService {
     };
   }
 
-  async getConversations(userId: number) {
+
+  async getConversations(userId: number, name?: string) {
     const conversations = await this.prisma.conversaciones.findMany({
       where: {
         OR: [{ usuario1Id: userId }, { usuario2Id: userId }]
@@ -118,8 +122,8 @@ export class ChatService {
           select: { id_usuario: true, nombre: true, foto: true }
         },
         mensajes: {
-          orderBy: { creadoEn: "desc" },     
-          select: { contenido: true, creadoEn: true, leido: true, usuarioId: true } 
+          orderBy: { creadoEn: "desc" },
+          select: { contenido: true, creadoEn: true, leido: true, usuarioId: true }
         }
       },
       orderBy: {
@@ -127,7 +131,7 @@ export class ChatService {
       }
     });
 
-    return conversations.map(conversation => {
+    let mappedConversations = conversations.map(conversation => {
       const otherUser = conversation.usuario1Id === userId ? conversation.usuario2 : conversation.usuario1;
       const lastMessage = conversation.mensajes[0];
 
@@ -145,15 +149,70 @@ export class ChatService {
         unreadMessages: unreadCount
       };
     });
+
+    const existingUserIds = new Set(mappedConversations.map(c => c.userId));
+
+    const otherUsers = await this.prisma.usuarios.findMany({
+      where: {
+        NOT: { id_usuario: userId },
+        estado: { not: 0 }
+      },
+      select: {
+        id_usuario: true,
+        nombre: true,
+        foto: true
+      }
+    });
+
+    const extraConversations = otherUsers
+      .filter(user => !existingUserIds.has(user.id_usuario))
+      .map(user => ({
+        conversationId: null,
+        userId: user.id_usuario,
+        name: user.nombre,
+        profilePicture: user.foto,
+        lastMessage: "Sin mensajes",
+        lastMessageTime: null,
+        unreadMessages: 0
+      }));
+
+    let finalResults = [...mappedConversations, ...extraConversations];
+
+    if (name) {
+      const lowerName = name.toLowerCase();
+      finalResults = finalResults.filter(convo =>
+        convo.name.toLowerCase().includes(lowerName)
+      );
+    }
+
+    return finalResults;
   }
 
-  async updateLastTimeAndMessage(conversacionId: number, lastMessage: string) {
+
+
+
+
+
+  async updateLastTimeAndMessage(
+    conversacionId: number,
+    lastMessage: string,
+    usuarioid1: number,
+    receptorId: number
+  ) {
     try {
       await this.prisma.conversaciones.update({
         where: { id: conversacionId },
         data: {
           lastTime: new Date(),
           lastMessage: lastMessage,
+        },
+      });
+      await this.prisma.usuarios.updateMany({
+        where: {
+          id_usuario: { in: [usuarioid1, receptorId] }
+        },
+        data: {
+          ultimo_login: new Date(),
         },
       });
     } catch (error) {
