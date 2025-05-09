@@ -108,7 +108,8 @@ export class ChatService {
     };
   }
 
-  async getConversations(userId: number) {
+
+  async getConversations(userId: number, name?: string) {
     const conversations = await this.prisma.conversaciones.findMany({
       where: {
         OR: [{ usuario1Id: userId }, { usuario2Id: userId }]
@@ -130,7 +131,7 @@ export class ChatService {
       }
     });
 
-    return conversations.map(conversation => {
+    let mappedConversations = conversations.map(conversation => {
       const otherUser = conversation.usuario1Id === userId ? conversation.usuario2 : conversation.usuario1;
       const lastMessage = conversation.mensajes[0];
 
@@ -143,20 +144,75 @@ export class ChatService {
         userId: otherUser.id_usuario,
         name: otherUser.nombre,
         profilePicture: otherUser.foto,
-        lastMessage: conversation?.lastMessage || "Sin mensajes",
+        lastMessage: lastMessage?.contenido || "Sin mensajes",
         lastMessageTime: lastMessage?.creadoEn || conversation.lastTime || conversation.creadoEn,
         unreadMessages: unreadCount
       };
     });
+
+    const existingUserIds = new Set(mappedConversations.map(c => c.userId));
+
+    const otherUsers = await this.prisma.usuarios.findMany({
+      where: {
+        NOT: { id_usuario: userId },
+        estado: { not: 0 }
+      },
+      select: {
+        id_usuario: true,
+        nombre: true,
+        foto: true
+      }
+    });
+
+    const extraConversations = otherUsers
+      .filter(user => !existingUserIds.has(user.id_usuario))
+      .map(user => ({
+        conversationId: null,
+        userId: user.id_usuario,
+        name: user.nombre,
+        profilePicture: user.foto,
+        lastMessage: "Sin mensajes",
+        lastMessageTime: null,
+        unreadMessages: 0
+      }));
+
+    let finalResults = [...mappedConversations, ...extraConversations];
+
+    if (name) {
+      const lowerName = name.toLowerCase();
+      finalResults = finalResults.filter(convo =>
+        convo.name.toLowerCase().includes(lowerName)
+      );
+    }
+
+    return finalResults;
   }
 
-  async updateLastTimeAndMessage(conversacionId: number, lastMessage: string) {
+
+
+
+
+
+  async updateLastTimeAndMessage(
+    conversacionId: number,
+    lastMessage: string,
+    usuarioid1: number,
+    receptorId: number
+  ) {
     try {
       await this.prisma.conversaciones.update({
         where: { id: conversacionId },
         data: {
           lastTime: new Date(),
           lastMessage: lastMessage,
+        },
+      });
+      await this.prisma.usuarios.updateMany({
+        where: {
+          id_usuario: { in: [usuarioid1, receptorId] }
+        },
+        data: {
+          ultimo_login: new Date(),
         },
       });
     } catch (error) {

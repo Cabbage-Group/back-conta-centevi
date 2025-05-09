@@ -3,6 +3,7 @@ import { ChatService } from './chat.service';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EstadoMensaje } from '@prisma/client';
+import { Usuario } from '../usuarios/entities/usuario.entity';
 
 @WebSocketGateway(3009, {
   cors: { origin: '*' },
@@ -147,8 +148,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       console.log('lastMessage:', lastMessage)
 
-      await this.chatService.updateLastTimeAndMessage(conversacionEmisor.id, lastMessage);
-      await this.chatService.updateLastTimeAndMessage(conversacionReceptor.id, lastMessage);
+      await this.chatService.updateLastTimeAndMessage(conversacionEmisor.id, lastMessage, id_usuario, receptorId);
+      await this.chatService.updateLastTimeAndMessage(conversacionReceptor.id, lastMessage, id_usuario, receptorId);
 
 
       const updatedConversationsEmisor = await this.chatService.getConversations(id_usuario);
