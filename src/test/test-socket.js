@@ -1,7 +1,7 @@
 const io = require('socket.io-client');
 
 // Conectarse al servidor WebSocket en el puerto 3008
-const socket = io('ws://localhost:3009');
+const socket = io('ws://localhost:3002');
 
 socket.on('connect', () => {
     console.log('✅ Conectado al servidor WebSocket');

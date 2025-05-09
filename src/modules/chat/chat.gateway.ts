@@ -3,7 +3,7 @@ import { ChatService } from './chat.service';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-@WebSocketGateway(3009, {
+@WebSocketGateway(3002, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
