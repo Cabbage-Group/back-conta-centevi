@@ -56,7 +56,6 @@ let UploadFilesService = class UploadFilesService {
             .groupBy(row => {
             const groupFields = (0, recursos_1.getGroupingFields)(row["Source"]);
             if (row["Source"].includes('(AP-PAY)')) {
-                console.log((0, recursos_1.generateGroupKey)(row, groupFields));
             }
             return (0, recursos_1.generateGroupKey)(row, groupFields);
         })
@@ -140,6 +139,7 @@ let UploadFilesService = class UploadFilesService {
         sortedData.forEach((dat, index) => {
             if (inicioGrupo) {
                 if (dat['Descripción'] == 'Balance Inicial') {
+                    console.log('PRINT BALANCE FINAL');
                     dat['Descripción'] = 'Balance Final';
                     const temp = sortedData[index + 1];
                     sortedData[index + 1] = sortedData[index];
@@ -195,9 +195,31 @@ let UploadFilesService = class UploadFilesService {
             const sheet = workbook.sheet('Agrupado');
             const lastRow = sheet.usedRange().endCell().rowNumber();
             for (let row = 2; row <= lastRow; row++) {
-                const cell = sheet.cell(`A${row}`);
-                if (cell.value()) {
-                    cell.style("bold", true);
+                const cellA = sheet.cell(`A${row}`);
+                if (cellA.value()) {
+                    cellA.style("bold", true);
+                }
+                const cellE = sheet.cell(`E${row}`);
+                const value = cellE.value();
+                if (value === 'Cambio de Periodo Corriente') {
+                    const cellsToBorder = [];
+                    for (let col = 6; col <= 8; col++) {
+                        const cell = sheet.cell(row, col);
+                        cell.style({
+                            topBorder: true,
+                            bottomBorder: true
+                        });
+                    }
+                    cellsToBorder.forEach(cell => {
+                        cell.style({
+                            topBorder: true,
+                            bottomBorder: true
+                        });
+                    });
+                    cellE.style({
+                        horizontalAlignment: 'right',
+                        verticalAlignment: 'center'
+                    });
                 }
             }
             return workbook.toFileAsync(outputFilePath);
