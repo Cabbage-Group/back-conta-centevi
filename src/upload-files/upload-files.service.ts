@@ -55,7 +55,7 @@ export class UploadFilesService {
       .groupBy(row => {
         const groupFields = getGroupingFields(row["Source"]);
         if (row["Source"].includes('(AP-PAY)')) {
-          console.log(generateGroupKey(row, groupFields))
+          // console.log(generateGroupKey(row, groupFields))
         }
         return generateGroupKey(row, groupFields);
       })
@@ -76,10 +76,10 @@ export class UploadFilesService {
         if (groupObj['Source'] && (groupObj['Source'].includes("(AP-PURCHASE)") || 
         groupObj['Source'].includes("(AP-PUR-INV)") || 
         groupObj['Source'].includes("(MAN-ENTRY)"))) {
-let fecha = _.last(rows)['Fecha'];
-} else {
-let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
- */
+      let fecha = _.last(rows)['Fecha'];
+      } else {
+      let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
+      */
         const fecha = groupObj['Fecha'] || rows[0]['Fecha'];
         //console.log(rows[0]['Referencia'] , "#########################")
         const referencia = rows[0]['Referencia'];
@@ -194,8 +194,7 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
           Debito: '',
           Credito:'',
           Balance:''
-        });
-
+        });        
         transformedData.push({
           Cuenta: '',
           Fecha: row.Fecha,
@@ -207,6 +206,7 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
           Balance: row.Balance
         });
       } else {
+
         transformedData.push({ ...row });
       }
     });
@@ -217,28 +217,55 @@ let fecha = groupObj['Fecha'] || rows[0]['Fecha'];
     const outputFilePath = path.join(process.cwd(), 'uploads', `archivo_agrupado_${Date.now()}.xlsx`);
     xlsx.writeFile(newWorkbook, outputFilePath);
 
-    return XlsxPopulate.fromFileAsync(outputFilePath)
-      .then(workbook => {
-        const sheet = workbook.sheet('Agrupado');
+  return XlsxPopulate.fromFileAsync(outputFilePath)
+    .then(workbook => {
+      const sheet = workbook.sheet('Agrupado');
+      const lastRow = sheet.usedRange().endCell().rowNumber();
 
-        const lastRow = sheet.usedRange().endCell().rowNumber();
-
-        for (let row = 2; row <= lastRow; row++) {
-          const cell = sheet.cell(`A${row}`);
-          if (cell.value()) {
-            cell.style("bold", true);
-          }
+      for (let row = 2; row <= lastRow; row++) {
+        const cellA = sheet.cell(`A${row}`);
+        if (cellA.value()) {
+          cellA.style("bold", true);
         }
-        return workbook.toFileAsync(outputFilePath);
-      })
-      .then(() => {
-        fs.unlinkSync(filePath);
 
-        return path.basename(outputFilePath);
-      })
-      .catch(err => {
-        console.error('Error al aplicar estilos:', err);
-        return null;
-      });
+        const cellE = sheet.cell(`E${row}`);
+        const value = cellE.value();
+
+        if (value === 'Cambio de Periodo Corriente') {
+          const cellsToBorder: any[] = [];
+
+          for (let col = 6; col <= 8; col++) {
+            const cell = sheet.cell(row, col);
+            cell.style({
+              topBorder: true,
+              bottomBorder: true
+            });
+          }
+
+          cellsToBorder.forEach(cell => {
+            cell.style({
+              topBorder: true,
+              bottomBorder: true
+            });
+          });
+
+          cellE.style({
+            horizontalAlignment: 'right',
+            verticalAlignment: 'center'
+          });
+        }
+      }
+
+      return workbook.toFileAsync(outputFilePath);
+    })
+    .then(() => {
+      fs.unlinkSync(filePath);
+      return path.basename(outputFilePath);
+    })
+    .catch(err => {
+      console.error('Error al aplicar estilos:', err);
+      return null;
+    });
+
   }
 }
