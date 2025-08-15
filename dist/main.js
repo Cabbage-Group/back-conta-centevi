@@ -8,7 +8,12 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.use('/download', express.static((0, path_1.join)(__dirname, '..', 'uploads')));
     app.enableCors({
-        origin: ['http://127.0.0.1:8000', 'https://contabilidad.centevi.digital', 'https://centevi-laravel.centevi.digital'],
+        origin: [
+            'http://localhost:5173/',
+            'http://127.0.0.1:8000',
+            'https://contabilidad.centevi.digital',
+            'https://centevi-laravel.centevi.digital',
+        ],
         methods: 'GET, POST, PUT, DELETE',
         allowedHeaders: 'Content-Type, Authorization, x-requested-with',
     });
