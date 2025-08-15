@@ -5,5 +5,8 @@ export declare class UploadFilesController {
     agruparFechaReferencia(file: Express.Multer.File): Promise<{
         downloadLink: string;
     }>;
+    agruparFechaReferenciaAnterior(file: Express.Multer.File): Promise<{
+        downloadLink: string;
+    }>;
     downloadFile(filename: string, res: any): any;
 }

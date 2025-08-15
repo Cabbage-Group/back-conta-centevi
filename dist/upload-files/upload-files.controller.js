@@ -24,7 +24,15 @@ let UploadFilesController = class UploadFilesController {
     }
     async agruparFechaReferencia(file) {
         const filename = await this.uploadFileService.agrupamientoExcel(file.path);
-        return { downloadLink: `${process.env.IP}/upload-files/download/${filename}` };
+        return {
+            downloadLink: `${process.env.IP}/upload-files/download/${filename}`,
+        };
+    }
+    async agruparFechaReferenciaAnterior(file) {
+        const filename = await this.uploadFileService.agrupamientoExcelAnterior(file.path);
+        return {
+            downloadLink: `${process.env.IP}/upload-files/download/${filename}`,
+        };
     }
     downloadFile(filename, res) {
         return res.download(`uploads/${filename}`);
@@ -50,6 +58,25 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UploadFilesController.prototype, "agruparFechaReferencia", null);
+__decorate([
+    (0, common_1.Post)('agrupar-fecha-referencia-anterior'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
+        storage: (0, multer_1.diskStorage)({
+            destination: './uploads',
+            filename: (req, file, cb) => {
+                const randomName = Array(32)
+                    .fill(null)
+                    .map(() => Math.round(Math.random() * 16).toString(16))
+                    .join('');
+                return cb(null, `${randomName}${(0, path_1.extname)(file.originalname)}`);
+            },
+        }),
+    })),
+    __param(0, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UploadFilesController.prototype, "agruparFechaReferenciaAnterior", null);
 __decorate([
     (0, common_1.Get)('download/:filename'),
     __param(0, (0, common_1.Param)('filename')),
